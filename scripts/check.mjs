@@ -1,8 +1,10 @@
 import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
-for (const file of ["index.html","styles.css","app.js","package.json","assets/logo-mark.svg","assets/logo-lockup.svg"]) await access(file);
+for (const file of ["index.html","styles.css","hardening.css","app.js","package.json",".env.example","docs/PRODUCT_AUDIT.md","docs/RELEASE_REPORT.md","docs/FINAL_QA_QC_REPORT.md","assets/logo-mark.svg","assets/logo-lockup.svg"]) await access(file);
 const html = await readFile("index.html","utf8");
-for (const marker of ["id=\"analyze\"","id=\"dashboard\"","id=\"result\""]) if (!html.includes(marker)) throw new Error(`Missing ${marker}`);
+for (const marker of ["id=\"mainContent\"","id=\"analyze\"","id=\"dashboard\"","id=\"result\"","id=\"themeBtn\"","id=\"connectionState\"","id=\"menuBtn\""]) if (!html.includes(marker)) throw new Error(`Missing ${marker}`);
+const app = await readFile("app.js","utf8");
+for (const behavior of ["history.pushState","addEventListener(\"popstate\"","reportValidity()"] ) if (!app.includes(behavior)) throw new Error(`Missing behavior ${behavior}`);
 const syntax = spawnSync(process.execPath,["--check","app.js"],{stdio:"inherit"});
 if (syntax.status !== 0) process.exit(syntax.status ?? 1);
 console.log("Scrap AI release checks passed.");
