@@ -4,10 +4,10 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Scrap AI by EADA — bilingual scrap material analysis and value-routing prototype.">
   <meta name="theme-color" content="#0b3b32"><title>Scrap AI by EADA</title>
-  <link rel="icon" href="assets/logo-mark.svg"><link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="assets/logo-mark.svg"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="hardening.css">
 </head>
 <body>
-  <header><a class="brand" href="#"><img src="assets/logo-lockup.svg" alt="EADA"><span>SCRAP AI</span></a><nav><button onclick="showPage('analyze')" data-t="analyze">حلّل</button><button onclick="showPage('dashboard')" data-t="dashboard">لوحة التحكم</button><a href="https://eada-platform.vercel.app" data-t="eada">منصة إعادة</a></nav><button class="lang" onclick="toggleLang()" id="langBtn">EN</button></header>
+  <header><a class="brand" href="#"><img src="assets/logo-lockup.svg" alt="EADA"><span>SCRAP AI</span></a><nav><button onclick="showPage('analyze')" data-t="analyze">حلّل</button><button onclick="showPage('dashboard')" data-t="dashboard">لوحة التحكم</button><a href="https://eada-platform.vercel.app" data-t="eada">منصة إعادة</a></nav><span class="connection" id="connectionState">● Online</span><button class="lang" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle color theme">◐</button><button class="lang" onclick="toggleLang()" id="langBtn">EN</button></header>
   <main>
     <section id="analyze" class="page active shell">
       <div class="hero"><div><span class="eyebrow" data-t="eyebrow">تحليل السكراب الذكي</span><h1 data-t="title">صوّر السكراب.<br><em>اكتشف قيمته.</em></h1><p data-t="intro">ارفع صورة وأدخل الوزن وحالة الفرز للحصول على تقدير أولي للمادة والنقاء والقيمة وأفضل مسار.</p></div><div class="hero-stat"><strong>6</strong><span data-t="materials">فئات مواد</span><strong>4</strong><span data-t="routes">مسارات قيمة</span></div></div>

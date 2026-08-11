@@ -1,0 +1,9 @@
+[data-theme="dark"]{--canvas:#071713;--ink:#eff8f4;--muted:#a8b8b2;--line:#29463d;--deep:#61c5a4;--shadow:0 18px 55px rgba(0,0,0,.3)}
+[data-theme="dark"] body{color-scheme:dark}
+[data-theme="dark"] header,[data-theme="dark"] .card,[data-theme="dark"] .flow div{background:#10251f}
+[data-theme="dark"] input,[data-theme="dark"] select{background:#152b24;color:var(--ink)}
+.connection{font-size:11px;color:var(--green);font-weight:800;white-space:nowrap}.connection.offline{color:#c94c42}
+.workspace-shell nav{position:fixed;top:78px;bottom:0;inset-inline-start:0;width:220px;display:flex;flex-direction:column;align-items:stretch;padding:20px 12px;border-inline-end:1px solid var(--line);background:var(--canvas);z-index:8}.workspace-shell nav button,.workspace-shell nav a{text-align:start}.workspace-shell main{margin-inline-start:220px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(15,116,90,.3);outline-offset:2px}.page.active{animation:page-enter .24s ease-out}@keyframes page-enter{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:850px){.connection{margin-inline-start:auto}.workspace-shell nav{display:none}.workspace-shell main{margin-inline-start:0}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.page.active{animation:none}*{transition-duration:.01ms!important}}
