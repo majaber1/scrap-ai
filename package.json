@@ -1,0 +1,1 @@
+{"name":"scrap-ai","version":"1.0.0","private":true,"description":"Standalone bilingual Scrap AI prototype by EADA","scripts":{"serve":"npx --yes serve . -l 8081","test":"node scripts/check.mjs"},"license":"MIT"}

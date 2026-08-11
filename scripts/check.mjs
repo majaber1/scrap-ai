@@ -1,0 +1,8 @@
+import { access, readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+for (const file of ["index.html","styles.css","app.js","package.json","assets/logo-mark.svg","assets/logo-lockup.svg"]) await access(file);
+const html = await readFile("index.html","utf8");
+for (const marker of ["id=\"analyze\"","id=\"dashboard\"","id=\"result\""]) if (!html.includes(marker)) throw new Error(`Missing ${marker}`);
+const syntax = spawnSync(process.execPath,["--check","app.js"],{stdio:"inherit"});
+if (syntax.status !== 0) process.exit(syntax.status ?? 1);
+console.log("Scrap AI release checks passed.");
