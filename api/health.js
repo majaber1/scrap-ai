@@ -1,0 +1,2 @@
+const { pool, json } = require("../lib/server.cjs");
+module.exports=async function(req,res){try{if(!process.env.DATABASE_URL||!process.env.SESSION_SECRET)return json(res,503,{status:"not_configured",database:false,session:false});await pool.query("SELECT 1");return json(res,200,{status:"ok",database:true,session:true});}catch(e){console.error("health_error",e);return json(res,503,{status:"error",database:false,session:Boolean(process.env.SESSION_SECRET)});}};
