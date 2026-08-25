@@ -24,7 +24,7 @@ const copy = {
     material:"نوع المادة", auto:"🤖 تقدير تلقائي", copper:"🟠 نحاس / كيابل", aluminum:"⚪ ألمنيوم", steel:"⚙️ حديد / فولاذ", ewaste:"💻 نفايات إلكترونية", battery:"🔋 بطاريات", mixed:"♻️ مختلط",
     weight:"الوزن (كجم)", clean:"حالة الفرز", sorted:"✅ نظيف ومفروز", medium:"⚡ متوسط", dirty:"⚠️ مختلط / ملوث",
     goal:"الهدف", sell:"💵 بيع سريع", maximize:"📈 تعظيم القيمة", export:"🌍 فرصة تصدير", recycle:"♻️ تدوير ملتزم",
-    run:"🔍 تشغيل التحليل", disclaimer:"نموذج توضيحي وليس فحصًا مخبريًا أو عرض سعر ملزمًا.",
+    run:"🔍 تشغيل التحليل", disclaimer:"تحليل OpenAI حقيقي للمستخدم المسجل؛ تقديري وليس فحصًا مخبريًا أو عرض سعر ملزمًا.",
     waiting:"بانتظار بيانات السكراب", waitingText:"ستظهر هنا المادة والنقاء والقيمة والمسار المقترح.",
     f1:"صورة", f2:"تصنيف", f3:"نقاء", f4:"قيمة", f5:"مسار",
     market_badge:"السوق", market_title:"سوق السكراب السعودي", market_desc:"تصفح العروض المتاحة أو انشر عرضك وتطابق مع مشترين",
@@ -78,7 +78,7 @@ const copy = {
     material:"Material type", auto:"🤖 Auto estimate", copper:"🟠 Copper / cables", aluminum:"⚪ Aluminum", steel:"⚙️ Iron / steel", ewaste:"💻 E-waste", battery:"🔋 Batteries", mixed:"♻️ Mixed",
     weight:"Weight (kg)", clean:"Sorting condition", sorted:"✅ Clean & sorted", medium:"⚡ Medium", dirty:"⚠️ Mixed / contaminated",
     goal:"Goal", sell:"💵 Sell fast", maximize:"📈 Maximize value", export:"🌍 Export opportunity", recycle:"♻️ Compliant recycling",
-    run:"🔍 Run Analysis", disclaimer:"Demonstration model, not a laboratory inspection or binding quote.",
+    run:"🔍 Run Analysis", disclaimer:"Real OpenAI analysis for signed-in users; indicative, not a laboratory inspection or binding quote.",
     waiting:"Waiting for scrap data", waitingText:"Material, purity, value and suggested route will appear here.",
     f1:"Image", f2:"Classify", f3:"Purity", f4:"Value", f5:"Route",
     market_badge:"Market", market_title:"Saudi Scrap Market", market_desc:"Browse available listings or publish yours and match with buyers",
@@ -284,71 +284,54 @@ function inferMaterial() {
 }
 
 /* ===== ANALYSIS ===== */
-function analyze() {
+function publicImageData(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) return reject(new Error(lang === "ar" ? "اختر صورة JPG أو PNG أو WebP" : "Choose a JPG, PNG or WebP image"));
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("image_read_failed"));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("invalid_image"));
+      image.onload = () => {
+        const scale = Math.min(1, 1280 / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+const safeAi = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
+
+async function analyze() {
   const weightInput = document.getElementById("weight");
   if (!weightInput.reportValidity()) return;
-
-  const material = inferMaterial();
+  const file = document.getElementById("image").files?.[0];
+  if (!file) { toast(lang === "ar" ? "ارفع صورة السكراب أولاً" : "Upload a scrap image first"); return; }
+  const result = document.getElementById("result");
+  result.innerHTML = `<div class="empty-state"><h2>${lang === "ar" ? "جاري تحليل الصورة عبر OpenAI..." : "Analyzing the image with OpenAI..."}</h2></div>`;
   const weight = Math.min(100000000, Math.max(1, +weightInput.value || 1));
   const clean = document.getElementById("clean").value;
   const goal = document.getElementById("goal").value;
-  const item = catalog[material];
-
-  const purity = Math.max(25, Math.min(98, item.purity + ({ clean: 10, medium: 0, dirty: -16 }[clean])));
-  const price = item.price * ({ clean: 1.08, medium: 0.96, dirty: 0.78 }[clean]);
-  const raw = Math.round(weight * price);
-  const cost = Math.round(weight * ({ clean: 0.15, medium: 0.65, dirty: 1.35 }[clean]));
-  const optimized = Math.round(raw * (clean === "clean" ? 1.03 : clean === "medium" ? 1.14 : 1.24) - cost);
-  const netGain = optimized - raw;
-
-  let route = "resale";
-  if (material === "mixed" || material === "battery" || clean === "dirty" || goal === "recycle") route = "recycle";
-  if (goal === "export" && clean !== "dirty") route = "reexport";
-  if (goal === "maximize" && clean !== "clean") route = "upgrade";
-
-  const routeName = t("route_" + route);
-  const name = item[lang];
-  const confidence = material === "mixed" ? 61 : 84;
-
-  const predictions = generatePredictions(item.price, item.change);
-
-  document.getElementById("result").innerHTML = `
-    <div class="result-identify">
-      <div>
-        <span class="material-chip">${item.icon} ${name}</span>
-        <p class="confidence">${t("confidence_label")}: ${confidence}%</p>
-        <div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%"></div></div>
-      </div>
-    </div>
-    <div class="result-metrics">
-      <div class="metric-card"><span>${t("purity_label")}</span><strong>${purity}%</strong></div>
-      <div class="metric-card"><span>${t("price_kg")}</span><strong>${fmt(price)} SAR</strong></div>
-      <div class="metric-card"><span>${t("weight_label")}</span><strong>${fmt(weight)} kg</strong></div>
-    </div>
-    <div class="result-route">
-      <small>${t("route_label")}</small>
-      <h3>${routeName}</h3>
-      <p>${t("route_note")}</p>
-    </div>
-    <div class="result-breakdown">
-      <div class="breakdown-row"><span>${t("current_val")}</span><strong>${fmt(raw)} SAR</strong></div>
-      <div class="breakdown-row"><span>${t("process_cost")}</span><strong>${fmt(cost)} SAR</strong></div>
-      <div class="breakdown-row"><span>${t("optimized_val")}</span><strong>${fmt(optimized)} SAR</strong></div>
-      <div class="breakdown-row"><span>${t("net_gain")}</span><strong>+${fmt(netGain)} SAR</strong></div>
-    </div>
-    <div class="result-prediction">
-      <h4>${t("prediction_title")}</h4>
-      <div class="prediction-bars">${predictions.map((p, i) => `<div class="pred-bar${i === 0 ? " highlight" : ""}" style="height:${p.h}%"></div>`).join("")}</div>
-      <div class="pred-labels">${predictions.map(p => `<small>${p.label}</small>`).join("")}</div>
-    </div>
-    <div class="result-actions">
-      <button class="btn-listing" onclick="createListing('${material}',${weight},${optimized})">${t("create_listing")}</button>
-      <button class="btn-match" onclick="showBuyerMatch('${material}')">${t("match_buyer")}</button>
-    </div>`;
-
-  const history = read("scrap_ai_history", []);
-  history.unshift({ material, weight, purity, value: optimized, route, date: new Date().toISOString() });
-  localStorage.setItem("scrap_ai_history", JSON.stringify(history.slice(0, 50)));
+  try {
+    const imageDataUrl = await publicImageData(file);
+    const response = await fetch("/api/ai-analyze", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ imageDataUrl, estimatedWeightKg:weight, notes:`sorting=${clean}; goal=${goal}` }) });
+    const payload = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      result.innerHTML = `<div class="empty-state"><h2>${lang === "ar" ? "سجل الدخول لتشغيل تحليل OpenAI الحقيقي" : "Sign in to run real OpenAI analysis"}</h2><p>${lang === "ar" ? "افتح حساب الإنتاج ثم أعد التحليل." : "Open the Production account, then run the analysis again."}</p><button class="btn-primary" onclick="document.getElementById('prodOpen').click()">${lang === "ar" ? "فتح حساب الإنتاج" : "Open Production account"}</button></div>`;
+      return;
+    }
+    if (!response.ok) throw new Error(payload.error || "analysis_failed");
+    const a = payload.analysis, confidence = Math.round(Number(a.confidence) * 100);
+    result.innerHTML = `<div class="result-identify"><div><span class="material-chip">🤖 ${safeAi(lang === "ar" ? a.materialLabelAr : a.materialLabelEn)}</span><p class="confidence">${t("confidence_label")}: ${confidence}%</p><div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%"></div></div></div></div><div class="result-metrics"><div class="metric-card"><span>${t("purity_label")}</span><strong>${Math.round(Number(a.purityEstimatePercent))}%</strong></div><div class="metric-card"><span>${lang === "ar" ? "الدرجة" : "Grade"}</span><strong>${safeAi(a.grade)}</strong></div><div class="metric-card"><span>${t("weight_label")}</span><strong>${fmt(weight)} kg</strong></div></div><div class="result-route"><small>${lang === "ar" ? "ملاحظات الصورة" : "Image observations"}</small><p>${safeAi(lang === "ar" ? a.observationsAr : a.observationsEn)}</p><h3>${lang === "ar" ? "الفحص المطلوب" : "Required inspection"}</h3><p>${safeAi(lang === "ar" ? a.recommendedInspectionAr : a.recommendedInspectionEn)}</p><p class="disclaimer">${safeAi(lang === "ar" ? a.pricingCaveatAr : a.pricingCaveatEn)}</p></div><div class="result-actions"><button class="btn-listing" onclick="document.getElementById('prodOpen').click()">${lang === "ar" ? "إنشاء عرض إنتاجي" : "Create production listing"}</button></div>`;
+  } catch (error) {
+    result.innerHTML = `<div class="empty-state"><h2>${lang === "ar" ? "تعذر التحليل" : "Analysis unavailable"}</h2><p>${safeAi(error.message)}</p></div>`;
+  }
 }
 
 function generatePredictions(basePrice, changePercent) {
