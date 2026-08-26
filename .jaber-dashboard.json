@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "slug": "scrap-ai",
+  "product": "Scrap AI",
+  "canonicalRepo": "majaber1/scrap-ai",
+  "branch": "main",
+  "productionUrl": "https://scrap-ai.vercel.app",
+  "healthUrls": [
+    "https://scrap-ai.vercel.app/api/health"
+  ],
+  "readmePath": "README.md",
+  "architecturePath": "docs/ARCHITECTURE.md",
+  "sourcePolicy": {
+    "code": "github-main",
+    "runtime": "live-health",
+    "documentation": "repository"
+  }
+}
