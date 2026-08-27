@@ -3,499 +3,180 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Scrap AI by EADA — منصة ذكية لتحليل وتداول السكراب بأسعار السوق السعودي">
-  <meta name="theme-color" content="#0b3b32">
-  <title>Scrap AI by EADA</title>
+  <meta name="description" content="Scrap AI — سوق سعودي لبيع وشراء السكراب مع تحليل وتوثيق بالذكاء الاصطناعي">
+  <meta name="theme-color" content="#f7fbf8">
+  <title>Scrap AI | بيع وشراء السكراب بذكاء</title>
   <link rel="icon" href="assets/logo-mark.svg">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="hardening.css">
+  <link rel="stylesheet" href="simple-market.css">
 </head>
 <body>
   <a class="skip-link" id="skipLink" href="#mainContent">انتقل إلى المحتوى</a>
 
-  <!-- Header -->
   <header>
-    <a class="brand" href="#" onclick="showPage('home'); return false;">
-      <img src="assets/logo-lockup.svg" alt="EADA">
-      <span>SCRAP AI</span>
+    <a class="brand" href="#home" onclick="showPage('home'); return false;" aria-label="Scrap AI home">
+      <img src="assets/logo-lockup.svg" alt="Scrap AI">
     </a>
     <nav id="mainNav" aria-label="Primary navigation">
       <button onclick="showPage('home')" data-t="nav_home" class="nav-active">الرئيسية</button>
-      <button onclick="showPage('analyze')" data-t="nav_analyze">حلّل</button>
       <button onclick="showPage('marketplace')" data-t="nav_market">السوق</button>
-      <button onclick="showPage('dashboard')" data-t="nav_dash">لوحة التحكم</button>
-      <a href="https://eada-platform.vercel.app" data-t="nav_eada">منصة إعادة</a>
+      <button onclick="showPage('analyze')" data-t="nav_analyze">حلّل</button>
     </nav>
     <div class="header-actions">
       <span class="connection" id="connectionState" aria-live="polite">● متصل</span>
+      <button class="account-btn" onclick="openScrapAccount()"><span class="lang-ar">حسابي</span><span class="lang-en">My account</span></button>
       <button class="icon-btn menu-toggle" onclick="toggleMenu()" id="menuBtn" aria-controls="mainNav" aria-expanded="false" aria-label="Open menu">☰</button>
-      <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle color theme">◐</button>
+      <button class="icon-btn theme-hidden" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle color theme">◐</button>
       <button class="icon-btn" onclick="toggleLang()" id="langBtn" aria-label="Switch language">EN</button>
     </div>
   </header>
 
-  <!-- Live Price Ticker -->
-  <div class="price-ticker" id="priceTicker">
-    <div class="ticker-track" id="tickerTrack"></div>
-  </div>
+  <!-- Kept only as a non-visual compatibility hook for the existing JS. -->
+  <div class="price-ticker" id="priceTicker" hidden aria-hidden="true"><div class="ticker-track" id="tickerTrack"></div></div>
 
   <main id="mainContent" tabindex="-1">
-
-    <!-- ===== HOME PAGE ===== -->
     <section id="home" class="page active">
       <div class="shell">
-        <!-- Hero -->
-        <div class="hero-section">
+        <div class="hero-section simple-hero">
           <div class="hero-content">
-            <span class="badge" data-t="hero_badge">مدعوم بالذكاء الاصطناعي</span>
-            <h1 data-t="hero_title">صوّر. حلّل.<br><em>تداول بذكاء.</em></h1>
-            <p class="hero-desc" data-t="hero_desc">منصة متكاملة لتحليل السكراب بالذكاء الاصطناعي، أسعار السوق اللحظية، ومطابقة المشترين والبائعين في السوق السعودي.</p>
+            <span class="badge"><span class="lang-ar">سوق السكراب السعودي</span><span class="lang-en">Saudi scrap marketplace</span></span>
+            <h1><span class="lang-ar">بيع واشتري السكراب<br><em>بشكل أبسط وأوثق.</em></span><span class="lang-en">Sell and buy scrap<br><em>simply and confidently.</em></span></h1>
+            <p class="hero-desc lang-ar">البائع يعرض الفرصة، المشتري يقدم عرضه، وScrap AI يساعد في تحليل المادة وتوثيقها وإكمال الصفقة من الفحص حتى الاستلام.</p>
+            <p class="hero-desc lang-en">Sellers list opportunities, buyers make offers, and Scrap AI assists with material analysis, verification, inspection and pickup.</p>
             <div class="hero-cta">
-              <button class="btn-primary btn-lg" onclick="showPage('analyze')" data-t="hero_cta">ابدأ التحليل مجاناً</button>
-              <button class="btn-outline btn-lg" onclick="showPage('marketplace')" data-t="hero_cta2">تصفح السوق</button>
+              <button class="btn-primary btn-lg" onclick="openScrapAccount()"><span class="lang-ar">+ أضف عرض للبيع</span><span class="lang-en">+ List scrap for sale</span></button>
+              <button class="btn-outline btn-lg" onclick="showPage('marketplace')"><span class="lang-ar">تصفح فرص الشراء</span><span class="lang-en">Browse opportunities</span></button>
             </div>
-            <div class="hero-trust">
-              <div class="trust-item"><strong>6</strong><span data-t="hero_materials">فئات مواد</span></div>
-              <div class="trust-item"><strong>4</strong><span data-t="hero_routes">مسارات قيمة</span></div>
-              <div class="trust-item"><strong>SAR</strong><span data-t="hero_currency">أسعار محلية</span></div>
-              <div class="trust-item"><strong>AI</strong><span data-t="hero_ai">تحليل ذكي</span></div>
+            <div class="hero-trust simple-trust">
+              <div class="trust-item"><strong>1</strong><span class="lang-ar">البائع ينشر</span><span class="lang-en">Seller lists</span></div>
+              <div class="trust-item"><strong>2</strong><span class="lang-ar">AI يحلل</span><span class="lang-en">AI analyzes</span></div>
+              <div class="trust-item"><strong>3</strong><span class="lang-ar">المشتري يعرض</span><span class="lang-en">Buyer offers</span></div>
+              <div class="trust-item"><strong>4</strong><span class="lang-ar">تتم الصفقة</span><span class="lang-en">Deal closes</span></div>
             </div>
           </div>
-          <div class="hero-visual">
-            <div class="hero-card-stack">
-              <div class="float-card fc-1">
-                <span class="fc-icon">🟠</span>
-                <div><strong data-t="fc_copper">نحاس</strong><small>27.5 SAR/kg</small></div>
-                <span class="fc-trend up">↑ 3.2%</span>
-              </div>
-              <div class="float-card fc-2">
-                <span class="fc-icon">⚪</span>
-                <div><strong data-t="fc_alum">ألمنيوم</strong><small>7.2 SAR/kg</small></div>
-                <span class="fc-trend up">↑ 1.8%</span>
-              </div>
-              <div class="float-card fc-3">
-                <span class="fc-icon">⚙️</span>
-                <div><strong data-t="fc_steel">حديد</strong><small>1.35 SAR/kg</small></div>
-                <span class="fc-trend down">↓ 0.5%</span>
-              </div>
-            </div>
+          <div class="hero-visual simple-hero-visual">
+            <img src="assets/scrap-hero.svg" alt="Scrap seller and buyer marketplace">
           </div>
         </div>
 
-        <!-- How It Works -->
-        <div class="section-block">
-          <span class="badge" data-t="how_badge">كيف تعمل المنصة</span>
-          <h2 data-t="how_title">من الصورة إلى الصفقة في 60 ثانية</h2>
+        <div class="section-block simple-how">
+          <span class="badge"><span class="lang-ar">كيف تشتغل</span><span class="lang-en">How it works</span></span>
+          <h2><span class="lang-ar">من عرض السكراب إلى الاستلام</span><span class="lang-en">From listing to pickup</span></h2>
           <div class="steps-grid">
-            <div class="step-card">
-              <div class="step-num">01</div>
-              <div class="step-icon">📸</div>
-              <h3 data-t="step1_title">صوّر السكراب</h3>
-              <p data-t="step1_desc">التقط صورة للمادة أو ارفعها من جهازك</p>
-            </div>
+            <div class="step-card"><div class="step-num">01</div><div class="step-icon">📦</div><h3><span class="lang-ar">البائع ينشر الفرصة</span><span class="lang-en">Seller lists scrap</span></h3><p><span class="lang-ar">المادة، الكمية، المدينة والسعر المطلوب.</span><span class="lang-en">Material, quantity, city and asking value.</span></p></div>
             <div class="step-arrow">→</div>
-            <div class="step-card">
-              <div class="step-num">02</div>
-              <div class="step-icon">🤖</div>
-              <h3 data-t="step2_title">تحليل AI فوري</h3>
-              <p data-t="step2_desc">الذكاء الاصطناعي يصنّف المادة والنقاء والقيمة</p>
-            </div>
+            <div class="step-card"><div class="step-num">02</div><div class="step-icon">🤖</div><h3><span class="lang-ar">AI يساعد بالتحليل</span><span class="lang-en">AI assists analysis</span></h3><p><span class="lang-ar">تصنيف بصري، تقدير النقاء، ومتطلبات الفحص.</span><span class="lang-en">Visual classification, purity estimate and inspection guidance.</span></p></div>
             <div class="step-arrow">→</div>
-            <div class="step-card">
-              <div class="step-num">03</div>
-              <div class="step-icon">💰</div>
-              <h3 data-t="step3_title">سعر السوق</h3>
-              <p data-t="step3_desc">تسعير فوري مرتبط بأسعار السوق السعودي</p>
-            </div>
+            <div class="step-card"><div class="step-num">03</div><div class="step-icon">🤝</div><h3><span class="lang-ar">المشتري يقدم عرض</span><span class="lang-en">Buyer makes an offer</span></h3><p><span class="lang-ar">البائع يقارن ويقبل العرض المناسب.</span><span class="lang-en">Seller compares and accepts the right offer.</span></p></div>
             <div class="step-arrow">→</div>
-            <div class="step-card">
-              <div class="step-num">04</div>
-              <div class="step-icon">🤝</div>
-              <h3 data-t="step4_title">تداول وبِع</h3>
-              <p data-t="step4_desc">انشر عرضك أو تطابق مع مشترين تلقائياً</p>
-            </div>
+            <div class="step-card"><div class="step-num">04</div><div class="step-icon">🚚</div><h3><span class="lang-ar">فحص واستلام</span><span class="lang-en">Inspect & pickup</span></h3><p><span class="lang-ar">توثيق الوزن والفحص ثم إكمال الاستلام والتسوية.</span><span class="lang-en">Record inspection and weight, then complete pickup and settlement.</span></p></div>
           </div>
         </div>
 
-        <!-- Live Market Prices -->
         <div class="section-block">
-          <div class="section-header">
-            <div>
-              <span class="badge" data-t="prices_badge">أسعار لحظية</span>
-              <h2 data-t="prices_title">أسعار السوق السعودي</h2>
-            </div>
-            <div class="price-updated" id="priceUpdated"></div>
-          </div>
-          <div class="price-grid" id="priceGrid"></div>
-          <div class="price-disclaimer">
-            <small data-t="prices_note">الأسعار استرشادية مبنية على متوسط السوق المحلي وبورصة لندن للمعادن (LME). آخر تحديث يدوي.</small>
+          <span class="badge"><span class="lang-ar">دور الذكاء الاصطناعي</span><span class="lang-en">What AI does</span></span>
+          <h2><span class="lang-ar">AI مساعد للصفقة، وليس السوق نفسه</span><span class="lang-en">AI assists the deal — it does not replace the marketplace</span></h2>
+          <div class="features-grid simple-features">
+            <div class="feature-card"><div class="feat-icon">📷</div><h3><span class="lang-ar">تحليل الصورة</span><span class="lang-en">Image analysis</span></h3><p><span class="lang-ar">يتعرف على نوع السكراب والدرجة والنقاء المتوقع.</span><span class="lang-en">Identifies likely material, grade and purity.</span></p></div>
+            <div class="feature-card"><div class="feat-icon">✅</div><h3><span class="lang-ar">توثيق وفحص</span><span class="lang-en">Verification</span></h3><p><span class="lang-ar">يحفظ متطلبات الفحص والوزن والمستندات قبل الإغلاق.</span><span class="lang-en">Supports inspection, weighing and document evidence before close.</span></p></div>
+            <div class="feature-card"><div class="feat-icon">🔗</div><h3><span class="lang-ar">إكمال الصفقة</span><span class="lang-en">Deal completion</span></h3><p><span class="lang-ar">يربط العرض المقبول بمراحل الاستلام والمتابعة.</span><span class="lang-en">Connects accepted offers to pickup and transaction stages.</span></p></div>
           </div>
         </div>
 
-        <!-- Features -->
-        <div class="section-block">
-          <span class="badge" data-t="feat_badge">مميزات المنصة</span>
-          <h2 data-t="feat_title">كل ما يحتاجه البائع والمشتري</h2>
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feat-icon">📷</div>
-              <h3 data-t="feat1_title">تحليل بالصورة</h3>
-              <p data-t="feat1_desc">صوّر السكراب والذكاء الاصطناعي يحدد النوع والنقاء والقيمة فوراً</p>
-            </div>
-            <div class="feature-card">
-              <div class="feat-icon">📊</div>
-              <h3 data-t="feat2_title">أسعار لحظية</h3>
-              <p data-t="feat2_desc">أسعار مرتبطة بالسوق السعودي وبورصة LME مع تنبيهات الأسعار</p>
-            </div>
-            <div class="feature-card">
-              <div class="feat-icon">🤝</div>
-              <h3 data-t="feat3_title">مطابقة ذكية</h3>
-              <p data-t="feat3_desc">AI يطابق عروضك مع أفضل المشترين حسب الموقع والمادة</p>
-            </div>
-            <div class="feature-card">
-              <div class="feat-icon">🛡️</div>
-              <h3 data-t="feat4_title">تحقق موثوق</h3>
-              <p data-t="feat4_desc">تحقق بالسجل التجاري وشهادات الجودة لبيئة تداول آمنة</p>
-            </div>
-            <div class="feature-card">
-              <div class="feat-icon">🚛</div>
-              <h3 data-t="feat5_title">لوجستيات متكاملة</h3>
-              <p data-t="feat5_desc">ربط مع ناقلي السكراب المحليين لخدمة التوصيل والاستلام</p>
-            </div>
-            <div class="feature-card">
-              <div class="feat-icon">📱</div>
-              <h3 data-t="feat6_title">تصميم موبايل أولاً</h3>
-              <p data-t="feat6_desc">واجهة سهلة تعمل من الجوال والكمبيوتر بالعربي والإنجليزي</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- CTA Banner -->
-        <div class="cta-banner">
-          <h2 data-t="cta_title">جاهز تبدأ التداول الذكي؟</h2>
-          <p data-t="cta_desc">حلّل السكراب مجاناً واحصل على أفضل سعر في السوق</p>
-          <button class="btn-primary btn-lg" onclick="showPage('analyze')" data-t="cta_btn">ابدأ الآن</button>
+        <div class="cta-banner simple-cta">
+          <div><h2><span class="lang-ar">عندك سكراب للبيع؟</span><span class="lang-en">Have scrap to sell?</span></h2><p><span class="lang-ar">افتح حسابك وأضف العرض مباشرة. التحليل بالـAI اختياري ويساعدك في التوثيق.</span><span class="lang-en">Open your account and list it directly. AI analysis is optional and helps with verification.</span></p></div>
+          <button class="btn-primary btn-lg" onclick="openScrapAccount()"><span class="lang-ar">أضف عرض الآن</span><span class="lang-en">Create listing</span></button>
         </div>
       </div>
     </section>
 
-    <!-- ===== ANALYZE PAGE ===== -->
     <section id="analyze" class="page">
       <div class="shell">
-        <div class="page-header">
+        <div class="page-header simple-page-header">
+          <button class="back-btn" onclick="showPage('home')">← <span class="lang-ar">رجوع</span><span class="lang-en">Back</span></button>
           <span class="badge" data-t="analyze_badge">تحليل ذكي</span>
           <h1 data-t="analyze_title">حلّل السكراب واعرف قيمته</h1>
-          <p data-t="analyze_desc">ارفع صورة وأدخل التفاصيل للحصول على تقدير AI للمادة والنقاء والقيمة والمسار الأفضل</p>
+          <p class="lang-ar">استخدم AI كأداة مساعدة قبل أو بعد نشر العرض. القرار النهائي يعتمد على الفحص والوزن الفعلي.</p>
+          <p class="lang-en">Use AI as an assistant before or after listing. Final value still depends on inspection and actual weight.</p>
         </div>
-
         <div class="analyze-layout">
-          <!-- Input Form -->
           <article class="card form-card">
-            <div class="card-header">
-              <h2 data-t="input_title">بيانات السكراب</h2>
-              <span class="card-badge" data-t="input_badge">مجاني</span>
-            </div>
-
+            <div class="card-header"><h2 data-t="input_title">بيانات السكراب</h2><span class="card-badge">AI</span></div>
             <label class="drop-zone" for="image">
               <input id="image" type="file" accept="image/*" onchange="previewImage(event)">
-              <div id="preview">
-                <div class="drop-icon">📸</div>
-                <strong data-t="upload">ارفع صورة السكراب</strong>
-                <small>JPG / PNG · MAX 8 MB</small>
-                <span class="drop-hint" data-t="upload_hint">أو اسحب الصورة هنا</span>
-              </div>
+              <div id="preview"><div class="drop-icon">📸</div><strong data-t="upload">ارفع صورة السكراب</strong><small>JPG / PNG / WEBP · MAX 8 MB</small><span class="drop-hint" data-t="upload_hint">أو اسحب الصورة هنا</span></div>
             </label>
-
-            <div class="form-grid">
-              <label class="form-field">
-                <span data-t="material">نوع المادة</span>
-                <select id="material">
-                  <option value="auto" data-t="auto">🤖 تقدير تلقائي</option>
-                  <option value="copper" data-t="copper">🟠 نحاس / كيابل</option>
-                  <option value="aluminum" data-t="aluminum">⚪ ألمنيوم</option>
-                  <option value="steel" data-t="steel">⚙️ حديد / فولاذ</option>
-                  <option value="ewaste" data-t="ewaste">💻 نفايات إلكترونية</option>
-                  <option value="battery" data-t="battery">🔋 بطاريات</option>
-                  <option value="mixed" data-t="mixed">♻️ مختلط</option>
-                </select>
-              </label>
-              <label class="form-field">
-                <span data-t="weight">الوزن (كجم)</span>
-                <input id="weight" type="number" min="1" max="100000000" value="500" required inputmode="decimal">
-              </label>
-              <label class="form-field">
-                <span data-t="clean">حالة الفرز</span>
-                <select id="clean">
-                  <option value="clean" data-t="sorted">✅ نظيف ومفروز</option>
-                  <option value="medium" selected data-t="medium">⚡ متوسط</option>
-                  <option value="dirty" data-t="dirty">⚠️ مختلط / ملوث</option>
-                </select>
-              </label>
-              <label class="form-field">
-                <span data-t="goal">الهدف</span>
-                <select id="goal">
-                  <option value="sell" data-t="sell">💵 بيع سريع</option>
-                  <option value="maximize" data-t="maximize">📈 تعظيم القيمة</option>
-                  <option value="export" data-t="export">🌍 فرصة تصدير</option>
-                  <option value="recycle" data-t="recycle">♻️ تدوير ملتزم</option>
-                </select>
-              </label>
+            <div class="form-grid clean-form-grid">
+              <label class="form-field"><span data-t="material">نوع المادة</span><select id="material"><option value="auto" data-t="auto">🤖 تقدير تلقائي</option><option value="copper" data-t="copper">🟠 نحاس / كيابل</option><option value="aluminum" data-t="aluminum">⚪ ألمنيوم</option><option value="steel" data-t="steel">⚙️ حديد / فولاذ</option><option value="ewaste" data-t="ewaste">💻 نفايات إلكترونية</option><option value="battery" data-t="battery">🔋 بطاريات</option><option value="mixed" data-t="mixed">♻️ مختلط</option></select></label>
+              <label class="form-field"><span data-t="weight">الوزن (كجم)</span><input id="weight" type="number" min="1" max="100000000" value="500" required inputmode="decimal"></label>
+              <label class="form-field"><span data-t="clean">حالة الفرز</span><select id="clean"><option value="clean" data-t="sorted">✅ نظيف ومفروز</option><option value="medium" selected data-t="medium">⚡ متوسط</option><option value="dirty" data-t="dirty">⚠️ مختلط / ملوث</option></select></label>
+              <label class="form-field"><span data-t="goal">الهدف</span><select id="goal"><option value="sell" data-t="sell">💵 بيع</option><option value="maximize" data-t="maximize">📈 تحسين قيمة العرض</option></select></label>
             </div>
-
-            <button class="btn-primary btn-full" onclick="analyze()" data-t="run">
-              <span class="btn-icon">🔍</span> تشغيل التحليل
-            </button>
-            <p class="disclaimer" data-t="disclaimer">نموذج توضيحي وليس فحصًا مخبريًا أو عرض سعر ملزمًا.</p>
+            <button class="btn-primary btn-full" onclick="analyze()"><span class="btn-icon">🤖</span><span class="lang-ar">حلّل بالذكاء الاصطناعي</span><span class="lang-en">Analyze with AI</span></button>
+            <p class="disclaimer" data-t="disclaimer">تحليل OpenAI حقيقي للمستخدم المسجل؛ تقديري وليس فحصًا مخبريًا أو عرض سعر ملزمًا.</p>
           </article>
-
-          <!-- Results -->
-          <article class="card result-card" id="result">
-            <div class="empty-state">
-              <img src="assets/logo-mark.svg" alt="">
-              <h2 data-t="waiting">بانتظار بيانات السكراب</h2>
-              <p data-t="waitingText">ستظهر هنا المادة والنقاء والقيمة والمسار المقترح.</p>
-            </div>
-          </article>
+          <article class="card result-card" id="result"><div class="empty-state"><img src="assets/logo-mark.svg" alt=""><h2 data-t="waiting">بانتظار بيانات السكراب</h2><p data-t="waitingText">ستظهر هنا المادة والنقاء والقيمة والمسار المقترح.</p></div></article>
         </div>
-
-        <!-- Analysis Flow -->
-        <div class="flow-steps">
-          <div class="flow-step"><b>01</b><span data-t="f1">صورة</span></div>
-          <i class="flow-arrow">→</i>
-          <div class="flow-step"><b>02</b><span data-t="f2">تصنيف</span></div>
-          <i class="flow-arrow">→</i>
-          <div class="flow-step"><b>03</b><span data-t="f3">نقاء</span></div>
-          <i class="flow-arrow">→</i>
-          <div class="flow-step"><b>04</b><span data-t="f4">قيمة</span></div>
-          <i class="flow-arrow">→</i>
-          <div class="flow-step"><b>05</b><span data-t="f5">مسار</span></div>
-        </div>
+        <div class="flow-steps"><div class="flow-step"><b>01</b><span data-t="f1">صورة</span></div><i class="flow-arrow">→</i><div class="flow-step"><b>02</b><span data-t="f2">تصنيف</span></div><i class="flow-arrow">→</i><div class="flow-step"><b>03</b><span data-t="f3">نقاء</span></div><i class="flow-arrow">→</i><div class="flow-step"><b>04</b><span data-t="f4">قيمة</span></div><i class="flow-arrow">→</i><div class="flow-step"><b>05</b><span class="lang-ar">توثيق</span><span class="lang-en">Verify</span></div></div>
       </div>
     </section>
 
-    <!-- ===== MARKETPLACE PAGE ===== -->
     <section id="marketplace" class="page">
       <div class="shell">
-        <div class="page-header">
+        <div class="page-header simple-page-header">
+          <button class="back-btn" onclick="showPage('home')">← <span class="lang-ar">رجوع</span><span class="lang-en">Back</span></button>
           <span class="badge" data-t="market_badge">السوق</span>
-          <h1 data-t="market_title">سوق السكراب السعودي</h1>
-          <p data-t="market_desc">تصفح العروض المتاحة أو انشر عرضك وتطابق مع مشترين</p>
+          <h1><span class="lang-ar">فرص السكراب المعروضة</span><span class="lang-en">Available scrap opportunities</span></h1>
+          <p><span class="lang-ar">تصفح العروض، ثم افتح حساب المشتري لتقديم عرض حقيقي.</span><span class="lang-en">Browse listings, then open your buyer account to submit a real offer.</span></p>
         </div>
 
-        <!-- Market Stats -->
-        <div class="market-stats">
-          <div class="stat-card">
-            <span class="stat-icon">📦</span>
-            <div>
-              <strong id="marketListings">0</strong>
-              <small data-t="stat_listings">عروض نشطة</small>
-            </div>
-          </div>
-          <div class="stat-card">
-            <span class="stat-icon">👥</span>
-            <div>
-              <strong id="marketBuyers">0</strong>
-              <small data-t="stat_buyers">مشترين مسجلين</small>
-            </div>
-          </div>
-          <div class="stat-card">
-            <span class="stat-icon">💰</span>
-            <div>
-              <strong id="marketVolume">0 SAR</strong>
-              <small data-t="stat_volume">حجم التداول</small>
-            </div>
-          </div>
-          <div class="stat-card">
-            <span class="stat-icon">⚡</span>
-            <div>
-              <strong id="marketAvgTime" data-t="stat_avg_val">24 ساعة</strong>
-              <small data-t="stat_avg">متوسط وقت البيع</small>
-            </div>
-          </div>
+        <div class="role-actions">
+          <button class="role-card seller-role" onclick="openScrapAccount()"><span class="role-icon">📦</span><div><strong><span class="lang-ar">أنا بائع</span><span class="lang-en">I'm a seller</span></strong><small><span class="lang-ar">أضف بضاعة جديدة</span><span class="lang-en">Create a new listing</span></small></div><span>←</span></button>
+          <button class="role-card buyer-role" onclick="openScrapAccount()"><span class="role-icon">🛒</span><div><strong><span class="lang-ar">أنا مشتري</span><span class="lang-en">I'm a buyer</span></strong><small><span class="lang-ar">سجل الدخول وقدّم عرض شراء</span><span class="lang-en">Sign in and make an offer</span></small></div><span>←</span></button>
         </div>
 
-        <!-- Filters -->
+        <div class="market-stats compact-stats">
+          <div class="stat-card"><span class="stat-icon">📦</span><div><strong id="marketListings">0</strong><small data-t="stat_listings">عروض نشطة</small></div></div>
+          <div class="stat-card"><span class="stat-icon">👥</span><div><strong id="marketBuyers">0</strong><small data-t="stat_buyers">مشترين مسجلين</small></div></div>
+          <div class="stat-card hidden-stat" aria-hidden="true"><strong id="marketVolume">0 SAR</strong></div>
+        </div>
+
         <div class="market-toolbar">
-          <div class="search-box">
-            <span>🔍</span>
-            <input type="text" id="marketSearch" placeholder="" data-t-placeholder="search_placeholder" oninput="filterMarket()">
-          </div>
-          <div class="filter-chips" id="filterChips">
-            <button class="chip active" onclick="filterByMaterial('all')" data-t="filter_all">الكل</button>
-            <button class="chip" onclick="filterByMaterial('copper')" data-t="filter_copper">🟠 نحاس</button>
-            <button class="chip" onclick="filterByMaterial('aluminum')" data-t="filter_alum">⚪ ألمنيوم</button>
-            <button class="chip" onclick="filterByMaterial('steel')" data-t="filter_steel">⚙️ حديد</button>
-            <button class="chip" onclick="filterByMaterial('ewaste')" data-t="filter_ewaste">💻 إلكتروني</button>
-            <button class="chip" onclick="filterByMaterial('battery')" data-t="filter_battery">🔋 بطاريات</button>
-            <button class="chip" onclick="filterByMaterial('mixed')" data-t="filter_mixed">♻️ مختلط</button>
-          </div>
-          <div class="sort-controls">
-            <select id="marketSort" onchange="sortMarket()">
-              <option value="newest" data-t="sort_new">الأحدث</option>
-              <option value="price_high" data-t="sort_high">السعر: الأعلى</option>
-              <option value="price_low" data-t="sort_low">السعر: الأقل</option>
-              <option value="weight" data-t="sort_weight">الوزن</option>
-            </select>
-          </div>
+          <div class="search-box"><span>🔍</span><input type="text" id="marketSearch" placeholder="" data-t-placeholder="search_placeholder" oninput="filterMarket()"></div>
+          <div class="filter-chips" id="filterChips"><button class="chip active" onclick="filterByMaterial('all')" data-t="filter_all">الكل</button><button class="chip" onclick="filterByMaterial('copper')" data-t="filter_copper">🟠 نحاس</button><button class="chip" onclick="filterByMaterial('aluminum')" data-t="filter_alum">⚪ ألمنيوم</button><button class="chip" onclick="filterByMaterial('steel')" data-t="filter_steel">⚙️ حديد</button><button class="chip" onclick="filterByMaterial('ewaste')" data-t="filter_ewaste">💻 إلكتروني</button><button class="chip" onclick="filterByMaterial('battery')" data-t="filter_battery">🔋 بطاريات</button><button class="chip" onclick="filterByMaterial('mixed')" data-t="filter_mixed">♻️ مختلط</button></div>
+          <div class="sort-controls"><select id="marketSort" onchange="sortMarket()"><option value="newest" data-t="sort_new">الأحدث</option><option value="price_high" data-t="sort_high">السعر: الأعلى</option><option value="price_low" data-t="sort_low">السعر: الأقل</option><option value="weight" data-t="sort_weight">الوزن</option></select></div>
         </div>
-
-        <!-- Listings Grid -->
-        <div class="listings-grid" id="listingsGrid">
-          <!-- Populated by JS -->
-        </div>
-
-        <!-- Create Listing CTA -->
-        <div class="create-listing-bar">
-          <div>
-            <h3 data-t="create_title">عندك سكراب للبيع؟</h3>
-            <p data-t="create_desc">حلّل المادة أولاً ثم انشر عرضك في السوق</p>
-          </div>
-          <button class="btn-primary" onclick="showPage('analyze')" data-t="create_btn">حلّل وانشر</button>
-        </div>
+        <div class="listings-grid" id="listingsGrid"></div>
+        <div class="create-listing-bar"><div><h3><span class="lang-ar">عندك سكراب للبيع؟</span><span class="lang-en">Have scrap to sell?</span></h3><p><span class="lang-ar">أضف العرض مباشرة، وبعدها استخدم AI إذا احتجت تحليل أو توثيق.</span><span class="lang-en">List it directly, then use AI when you need analysis or verification.</span></p></div><button class="btn-primary" onclick="openScrapAccount()"><span class="lang-ar">+ أضف بضاعة</span><span class="lang-en">+ Add listing</span></button></div>
       </div>
     </section>
 
-    <!-- ===== DASHBOARD PAGE ===== -->
+    <!-- Existing local history stays available for compatibility, but it is no longer a primary navigation destination. -->
     <section id="dashboard" class="page">
       <div class="shell">
-        <div class="page-header">
-          <span class="badge" data-t="dash_badge">لوحة التحكم</span>
-          <h1 data-t="dash_title">إدارة أعمالك</h1>
-        </div>
-
-        <!-- Dashboard Stats -->
-        <div class="dash-stats">
-          <div class="dash-stat-card">
-            <div class="dash-stat-icon">📊</div>
-            <div>
-              <small data-t="analyses">التحليلات</small>
-              <strong id="statAnalyses">0</strong>
-            </div>
-          </div>
-          <div class="dash-stat-card">
-            <div class="dash-stat-icon">💰</div>
-            <div>
-              <small data-t="value">القيمة المقدرة</small>
-              <strong id="statValue">0 SAR</strong>
-            </div>
-          </div>
-          <div class="dash-stat-card">
-            <div class="dash-stat-icon">📦</div>
-            <div>
-              <small data-t="listings">مسودات العروض</small>
-              <strong id="statListings">0</strong>
-            </div>
-          </div>
-          <div class="dash-stat-card">
-            <div class="dash-stat-icon">🤝</div>
-            <div>
-              <small data-t="matches">المطابقات</small>
-              <strong id="statMatches">0</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dashboard Tabs -->
-        <div class="dash-tabs">
-          <button class="tab active" onclick="switchDashTab('history')" data-t="tab_history">سجل التحليلات</button>
-          <button class="tab" onclick="switchDashTab('mylistings')" data-t="tab_listings">عروضي</button>
-          <button class="tab" onclick="switchDashTab('alerts')" data-t="tab_alerts">تنبيهات الأسعار</button>
-        </div>
-
-        <div class="dash-content">
-          <!-- History Tab -->
-          <div class="dash-panel active" id="panel-history">
-            <article class="card">
-              <div class="card-header">
-                <h2 data-t="recent">آخر التحليلات</h2>
-                <button class="btn-text" onclick="clearHistory()" data-t="clear">مسح السجل</button>
-              </div>
-              <div id="history"></div>
-            </article>
-          </div>
-
-          <!-- My Listings Tab -->
-          <div class="dash-panel" id="panel-mylistings">
-            <article class="card">
-              <div class="card-header">
-                <h2 data-t="drafts">مسودات العروض</h2>
-              </div>
-              <div id="listingList"></div>
-            </article>
-          </div>
-
-          <!-- Alerts Tab -->
-          <div class="dash-panel" id="panel-alerts">
-            <article class="card">
-              <div class="card-header">
-                <h2 data-t="alerts_title">تنبيهات الأسعار</h2>
-                <button class="btn-text" onclick="showAlertDialog()" data-t="add_alert">+ إضافة تنبيه</button>
-              </div>
-              <div id="alertsList"></div>
-              <div class="empty-state small" id="alertsEmpty">
-                <p data-t="no_alerts">لا توجد تنبيهات. أضف تنبيه ليصلك إشعار عند تغير السعر.</p>
-              </div>
-            </article>
-          </div>
-        </div>
+        <div class="page-header simple-page-header"><button class="back-btn" onclick="showPage('home')">← <span class="lang-ar">رجوع</span><span class="lang-en">Back</span></button><span class="badge" data-t="dash_badge">لوحة التحكم</span><h1 data-t="dash_title">إدارة أعمالك</h1></div>
+        <div class="dash-stats"><div class="dash-stat-card"><div class="dash-stat-icon">📊</div><div><small data-t="analyses">التحليلات</small><strong id="statAnalyses">0</strong></div></div><div class="dash-stat-card"><div class="dash-stat-icon">💰</div><div><small data-t="value">القيمة المقدرة</small><strong id="statValue">0 SAR</strong></div></div><div class="dash-stat-card"><div class="dash-stat-icon">📦</div><div><small data-t="listings">مسودات العروض</small><strong id="statListings">0</strong></div></div><div class="dash-stat-card"><div class="dash-stat-icon">🤝</div><div><small data-t="matches">المطابقات</small><strong id="statMatches">0</strong></div></div></div>
+        <div class="dash-tabs"><button class="tab active" onclick="switchDashTab('history')" data-t="tab_history">سجل التحليلات</button><button class="tab" onclick="switchDashTab('mylistings')" data-t="tab_listings">عروضي</button><button class="tab tab-price-alerts" onclick="switchDashTab('alerts')" data-t="tab_alerts">تنبيهات الأسعار</button></div>
+        <div class="dash-content"><div class="dash-panel active" id="panel-history"><article class="card"><div class="card-header"><h2 data-t="recent">آخر التحليلات</h2><button class="btn-text" onclick="clearHistory()" data-t="clear">مسح السجل</button></div><div id="history"></div></article></div><div class="dash-panel" id="panel-mylistings"><article class="card"><div class="card-header"><h2 data-t="drafts">مسودات العروض</h2></div><div id="listingList"></div></article></div><div class="dash-panel" id="panel-alerts"><article class="card"><div class="card-header"><h2 data-t="alerts_title">تنبيهات الأسعار</h2><button class="btn-text" onclick="showAlertDialog()" data-t="add_alert">+ إضافة تنبيه</button></div><div id="alertsList"></div><div class="empty-state small" id="alertsEmpty"><p data-t="no_alerts">لا توجد تنبيهات.</p></div></article></div></div>
       </div>
     </section>
-
   </main>
 
-  <!-- Alert Dialog -->
-  <div class="modal-overlay" id="alertModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 data-t="alert_dialog_title">إضافة تنبيه سعر</h3>
-        <button onclick="closeAlertDialog()">✕</button>
-      </div>
-      <div class="modal-body">
-        <label class="form-field">
-          <span data-t="alert_material">المادة</span>
-          <select id="alertMaterial">
-            <option value="copper" data-t="copper">نحاس</option>
-            <option value="aluminum" data-t="aluminum">ألمنيوم</option>
-            <option value="steel" data-t="steel">حديد</option>
-            <option value="ewaste" data-t="ewaste">نفايات إلكترونية</option>
-            <option value="battery" data-t="battery">بطاريات</option>
-          </select>
-        </label>
-        <label class="form-field">
-          <span data-t="alert_condition">الشرط</span>
-          <select id="alertCondition">
-            <option value="above" data-t="alert_above">السعر أعلى من</option>
-            <option value="below" data-t="alert_below">السعر أقل من</option>
-          </select>
-        </label>
-        <label class="form-field">
-          <span data-t="alert_price">السعر (SAR/kg)</span>
-          <input id="alertPrice" type="number" min="0" step="0.1" value="10">
-        </label>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-outline" onclick="closeAlertDialog()" data-t="cancel">إلغاء</button>
-        <button class="btn-primary" onclick="addPriceAlert()" data-t="save_alert">حفظ التنبيه</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Buyer Match Dialog -->
-  <div class="modal-overlay" id="matchModal">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <h3 data-t="match_title">المشترين المطابقين</h3>
-        <button onclick="closeMatchModal()">✕</button>
-      </div>
-      <div class="modal-body" id="matchResults"></div>
-    </div>
-  </div>
-
-  <!-- Toast -->
+  <div class="modal-overlay" id="alertModal"><div class="modal"><div class="modal-header"><h3 data-t="alert_dialog_title">إضافة تنبيه سعر</h3><button onclick="closeAlertDialog()">✕</button></div><div class="modal-body"><label class="form-field"><span data-t="alert_material">المادة</span><select id="alertMaterial"><option value="copper" data-t="copper">نحاس</option><option value="aluminum" data-t="aluminum">ألمنيوم</option><option value="steel" data-t="steel">حديد</option><option value="ewaste" data-t="ewaste">نفايات إلكترونية</option><option value="battery" data-t="battery">بطاريات</option></select></label><label class="form-field"><span data-t="alert_condition">الشرط</span><select id="alertCondition"><option value="above" data-t="alert_above">السعر أعلى من</option><option value="below" data-t="alert_below">السعر أقل من</option></select></label><label class="form-field"><span data-t="alert_price">السعر (SAR/kg)</span><input id="alertPrice" type="number" min="0" step="0.1" value="10"></label></div><div class="modal-footer"><button class="btn-outline" onclick="closeAlertDialog()" data-t="cancel">إلغاء</button><button class="btn-primary" onclick="addPriceAlert()" data-t="save_alert">حفظ التنبيه</button></div></div></div>
+  <div class="modal-overlay" id="matchModal"><div class="modal modal-lg"><div class="modal-header"><h3 data-t="match_title">المشترين المطابقين</h3><button onclick="closeMatchModal()">✕</button></div><div class="modal-body" id="matchResults"></div></div></div>
   <div id="toast" role="status" aria-live="polite"></div>
 
+  <script>localStorage.setItem('scrap_ai_theme','light');</script>
   <script src="app.js"></script>
   <script>window.PRODUCTION_PLATFORM="scrap";</script>
   <script src="production-client.js"></script>
+  <script>
+    function openScrapAccount(){ document.getElementById('prodOpen')?.click(); }
+    const prodOpen=document.getElementById('prodOpen');
+    if(prodOpen){ prodOpen.setAttribute('aria-hidden','true'); prodOpen.tabIndex=-1; }
+    const prodTitle=document.querySelector('#prodLayer .prodTop b');
+    if(prodTitle) prodTitle.textContent=document.documentElement.lang==='en'?'Scrap AI Account':'حساب Scrap AI';
+  </script>
 </body>
 </html>

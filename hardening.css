@@ -1,49 +1,39 @@
-@import url("premium.css");
+/* Scrap AI hardening: accessibility, mobile navigation and optional legacy dark tokens. */
 
-/* ===== DARK MODE ===== */
+/* ===== DARK MODE (legacy only; UI now defaults and locks to light) ===== */
 [data-theme="dark"] {
-  --canvas: #071713;
-  --surface: rgba(16,37,31,.95);
-  --ink: #eff8f4;
-  --muted: #a8b8b2;
-  --line: #1e3a32;
-  --deep: #5ce5b0;
-  --green-light: rgba(15,116,90,.15);
-  --gold-light: rgba(214,182,92,.12);
-  --blue-light: rgba(33,65,93,.2);
-  --red-light: rgba(201,76,66,.12);
-  --shadow-sm: 0 2px 8px rgba(0,0,0,.15);
-  --shadow-md: 0 8px 30px rgba(0,0,0,.2);
-  --shadow-lg: 0 18px 55px rgba(0,0,0,.3);
+  --canvas: #f7fbf8;
+  --surface: #ffffff;
+  --ink: #16332b;
+  --muted: #6d7d77;
+  --line: #dce9e2;
+  --deep: #0f6f57;
+  --green-light: #e8f7f0;
+  --gold-light: #fff5df;
+  --blue-light: #edf5fc;
+  --red-light: #fef2f1;
+  --shadow-sm: 0 8px 24px rgba(22,51,43,.06);
+  --shadow-md: 0 18px 45px rgba(22,51,43,.10);
+  --shadow-lg: 0 28px 70px rgba(22,51,43,.14);
 }
-[data-theme="dark"] body { color-scheme: dark; }
-[data-theme="dark"] header { background: rgba(7,23,19,.88); }
+[data-theme="dark"] body { color-scheme: light; }
+[data-theme="dark"] header { background: rgba(255,255,255,.94); }
 [data-theme="dark"] input,
-[data-theme="dark"] select { background: #152b24; color: var(--ink); }
-[data-theme="dark"] .drop-zone { background: rgba(15,116,90,.08); border-color: #1e3a32; }
-[data-theme="dark"] .drop-zone:hover { background: rgba(15,116,90,.12); }
-[data-theme="dark"] .metric-card { background: rgba(255,255,255,.05); }
-[data-theme="dark"] .flow-step { background: var(--surface); }
-[data-theme="dark"] .step-card { background: var(--surface); }
-[data-theme="dark"] .price-card { background: var(--surface); }
-[data-theme="dark"] .feature-card { background: var(--surface); }
-[data-theme="dark"] .listing-card { background: var(--surface); }
-[data-theme="dark"] .listing-img { background: rgba(15,116,90,.1); }
+[data-theme="dark"] select { background: #fff; color: var(--ink); }
+[data-theme="dark"] .drop-zone { background: #f7fcf9; border-color: #a8d6c6; }
+[data-theme="dark"] .metric-card,
+[data-theme="dark"] .flow-step,
+[data-theme="dark"] .step-card,
+[data-theme="dark"] .price-card,
+[data-theme="dark"] .feature-card,
+[data-theme="dark"] .listing-card,
 [data-theme="dark"] .stat-card,
-[data-theme="dark"] .dash-stat-card { background: var(--surface); }
-[data-theme="dark"] .search-box { background: var(--surface); }
-[data-theme="dark"] .chip { background: var(--surface); }
-[data-theme="dark"] .chip.active { background: var(--green); color: white; }
-[data-theme="dark"] .create-listing-bar { background: rgba(15,116,90,.1); border-color: #1e3a32; }
-[data-theme="dark"] .modal { background: #0d2920; }
-[data-theme="dark"] .cta-banner { background: linear-gradient(135deg, #0a2b22, #0d4035); }
-[data-theme="dark"] .result-route { background: #0a2b22; }
-[data-theme="dark"] .result-prediction { background: rgba(33,65,93,.15); }
-[data-theme="dark"] .float-card { background: var(--surface); }
-[data-theme="dark"] .btn-listing { background: rgba(214,182,92,.15); }
-[data-theme="dark"] .btn-match { background: rgba(33,65,93,.2); }
-[data-theme="dark"] .price-card .price { color: var(--ink); }
-[data-theme="dark"] .listing-price strong { color: var(--ink); }
+[data-theme="dark"] .dash-stat-card,
+[data-theme="dark"] .search-box,
+[data-theme="dark"] .chip,
+[data-theme="dark"] .float-card { background: #fff; }
+[data-theme="dark"] .modal { background: #fff; }
+[data-theme="dark"] .listing-img { background-color: #edf7f2; }
 
 /* ===== ACCESSIBILITY ===== */
 .skip-link {
@@ -52,7 +42,7 @@
   inset-inline-start: 8px;
   z-index: 300;
   transform: translateY(-160%);
-  background: var(--deep);
+  background: #0f6f57;
   color: #fff;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
@@ -64,8 +54,9 @@
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: 3px solid rgba(53,210,155,.45);
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(21,149,111,.28);
   outline-offset: 2px;
 }
 
@@ -81,7 +72,7 @@ select:focus-visible {
     display: none;
     flex-direction: column;
     padding: 10px;
-    background: #0a1814;
+    background: #fff;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);

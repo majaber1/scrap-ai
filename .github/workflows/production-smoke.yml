@@ -1,0 +1,34 @@
+name: Production Smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  production-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Wait for redesigned production shell
+        env:
+          PRODUCTION_URL: https://scrap-ai.vercel.app
+        run: |
+          for i in $(seq 1 24); do
+            html="$(curl -fsSL "$PRODUCTION_URL" || true)"
+            if echo "$html" | grep -q 'simple-market.css' && echo "$html" | grep -q 'scrap-hero.svg'; then
+              echo "Redesigned production shell is live"
+              exit 0
+            fi
+            echo "Attempt $i/24: waiting for Vercel production deployment"
+            sleep 15
+          done
+          echo "Production did not deploy the redesigned shell in time"
+          exit 1
+      - name: Run real seller-buyer production journey
+        env:
+          PRODUCTION_URL: https://scrap-ai.vercel.app
+        run: npm run test:prod
