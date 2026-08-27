@@ -1,3 +1,5 @@
+@import url("premium.css");
+
 /* ===== DARK MODE ===== */
 [data-theme="dark"] {
   --canvas: #071713;
@@ -63,7 +65,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgba(15,116,90,.4);
+  outline: 3px solid rgba(53,210,155,.45);
   outline-offset: 2px;
 }
 
@@ -79,7 +81,7 @@ select:focus-visible {
     display: none;
     flex-direction: column;
     padding: 10px;
-    background: var(--canvas);
+    background: #0a1814;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
