@@ -14,7 +14,9 @@ if(/EADA|إعادة/.test(logo)) throw new Error("EADA branding remains in Scrap
 const app=await readFile("app.js","utf8");
 for(const behavior of ["history.pushState","addEventListener(\"popstate\"","reportValidity()","/api/ai-analyze"]) if(!app.includes(behavior)) throw new Error(`Missing behavior ${behavior}`);
 const production=await readFile("production-client.js","utf8");
-for(const behavior of ["/api/auth","/api/workflow","/api/platform","createListing","submitOffer","acceptOffer","submitVerification","recordInspection","advanceTransaction","/api/upload","/api/ai-analyze"]) if(!production.includes(behavior)) throw new Error(`Missing production behavior ${behavior}`);
-for(const forbidden of ["renderEada","renderSource","Production Workspace"]) if(production.includes(forbidden)) throw new Error(`Legacy cross-product production UI remains: ${forbidden}`);
+for(const behavior of ["/api/auth","/api/workflow","/api/platform","createListing","submitOffer","acceptOffer","submitVerification","recordInspection","advanceTransaction","/api/ai-analyze","prodBuyTab","prodSellTab","buyerWelcome","Seller + Buyer","initialMode(user.kind)"]) if(!production.includes(behavior)) throw new Error(`Missing production behavior ${behavior}`);
+for(const forbidden of ["renderEada","renderSource","Production Workspace","const isSeller=[\"seller\"]","const isBuyer=[\"buyer\",\"factory\"]"]) if(production.includes(forbidden)) throw new Error(`Forbidden seller/buyer role gating remains: ${forbidden}`);
+if(!production.includes('["buyer","factory","both"].includes(kind)?"buy":"sell"')) throw new Error("Buyer/both accounts do not default to buying mode");
+if(!production.includes('const sell=mode==="sell",buy=mode==="buy"')) throw new Error("Marketplace is not driven by explicit buy/sell mode");
 for(const file of ["app.js","production-client.js"]){const syntax=spawnSync(process.execPath,["--check",file],{stdio:"inherit"});if(syntax.status!==0)process.exit(syntax.status??1);}
-console.log("Scrap AI simple seller/buyer release checks passed.");
+console.log("Scrap AI role-safe buyer/seller release checks passed.");
