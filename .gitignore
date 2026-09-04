@@ -3,4 +3,6 @@ Thumbs.db
 node_modules/
 *.log
 .vercel
-.env*
+.env
+.env.*
+!.env.example

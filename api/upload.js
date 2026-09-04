@@ -1,4 +1,79 @@
-const {randomUUID,createHash,createHmac}=require("crypto");const {pool,requireSession,json}=require("../lib/server.cjs");const {ensureOperations}=require("../lib/operations.cjs");
-const allowed=new Set(["application/pdf","image/jpeg","image/png","image/webp"]),keys=["R2_ACCOUNT_ID","R2_ACCESS_KEY_ID","R2_SECRET_ACCESS_KEY","R2_BUCKET"],sha=v=>createHash("sha256").update(v).digest("hex"),hmac=(k,v,e)=>createHmac("sha256",k).update(v).digest(e),enc=v=>encodeURIComponent(v).replace(/[!'()*]/g,c=>`%${c.charCodeAt(0).toString(16).toUpperCase()}`);
-function sign(bucket,key){const now=new Date(),stamp=now.toISOString().replace(/[:-]|\.\d{3}/g,"").slice(0,15)+"Z",day=stamp.slice(0,8),host=`${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,scope=`${day}/auto/s3/aws4_request`,p={"X-Amz-Algorithm":"AWS4-HMAC-SHA256","X-Amz-Credential":`${process.env.R2_ACCESS_KEY_ID}/${scope}`,"X-Amz-Date":stamp,"X-Amz-Expires":"600","X-Amz-SignedHeaders":"host"},q=Object.entries(p).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${enc(k)}=${enc(v)}`).join("&"),uri=`/${enc(bucket)}/${key.split("/").map(enc).join("/")}`,canon=["PUT",uri,q,`host:${host}\n`,"host","UNSIGNED-PAYLOAD"].join("\n"),str=["AWS4-HMAC-SHA256",stamp,scope,sha(canon)].join("\n"),dk=hmac(`AWS4${process.env.R2_SECRET_ACCESS_KEY}`,day),rk=hmac(dk,"auto"),sk=hmac(rk,"s3"),sig=hmac(hmac(sk,"aws4_request"),str,"hex");return`https://${host}${uri}?${q}&X-Amz-Signature=${sig}`}
-module.exports=async(req,res)=>{const s=requireSession(req,res);if(!s)return;if(req.method!=="POST")return json(res,405,{error:"method_not_allowed"});if(!keys.every(k=>process.env[k]))return json(res,503,{error:"object_storage_not_configured",required:keys});try{await ensureOperations(pool);const b=req.body||{};if(b.action==="presign"){const size=Number(b.sizeBytes),type=String(b.contentType||"");if(!allowed.has(type)||!Number.isInteger(size)||size<1||size>10485760)return json(res,400,{error:"invalid_file",allowed:[...allowed],maxBytes:10485760});const ext={"application/pdf":"pdf","image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[type],category=String(b.category||"other").replace(/[^a-z0-9_-]/gi,"").slice(0,40)||"other",key=`organizations/${s.organizationId}/${category}/${randomUUID()}.${ext}`;return json(res,200,{uploadUrl:sign(process.env.R2_BUCKET,key),objectKey:key,expiresIn:600,method:"PUT",headers:{"Content-Type":type}})}if(b.action==="complete"){const key=String(b.objectKey||"");if(!key.startsWith(`organizations/${s.organizationId}/`))return json(res,400,{error:"invalid_object_key"});const r=await pool.query("INSERT INTO organization_documents(organization_id,category,object_key,file_name,content_type,size_bytes,entity_type,entity_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(object_key) DO UPDATE SET status='uploaded' RETURNING *",[s.organizationId,b.category||"other",key,b.fileName,b.contentType,b.sizeBytes,b.entityType||null,b.entityId||null]);return json(res,201,{document:r.rows[0]})}return json(res,400,{error:"invalid_action"})}catch(e){console.error("upload_error",e);return json(res,500,{error:"server_error"})}};
+const { randomUUID } = require("crypto");
+const { pool, requireSession, json } = require("../lib/server.cjs");
+const { ensureOperations } = require("../lib/operations.cjs");
+const { blobConfigured, r2Configured, storageConfigured, storageRequired, keys, sign } = require("../lib/storage.cjs");
+
+const allowed = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+const extensions = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+
+function parseDataUrl(raw) {
+  const match = String(raw || "").match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match || !allowed.has(match[1])) return null;
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > 2800000) return null;
+  return { type: match[1], buffer };
+}
+
+module.exports = async function handler(req, res) {
+  const session = requireSession(req, res);
+  if (!session) return;
+  if (req.method !== "POST") return json(res, 405, { error: "method_not_allowed" });
+  if (!storageConfigured()) return json(res, 503, { error: "object_storage_not_configured", required: storageRequired() });
+  try {
+    await ensureOperations(pool);
+    const body = req.body || {};
+
+    if (body.action === "store") {
+      const parsed = parseDataUrl(body.imageDataUrl);
+      if (!parsed) return json(res, 400, { error: "invalid_image" });
+      const category = String(body.category || "listing").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "listing";
+      const pathname = `organizations/${session.organizationId}/${category}/${randomUUID()}.${extensions[parsed.type]}`;
+      if (blobConfigured()) {
+        const { put } = require("@vercel/blob");
+        const stored = await put(pathname, parsed.buffer, { access: "public", contentType: parsed.type, addRandomSuffix: false });
+        await pool.query(
+          `INSERT INTO organization_documents(organization_id,category,object_key,file_name,content_type,size_bytes,entity_type,entity_id)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+           ON CONFLICT(object_key) DO UPDATE SET status='uploaded'`,
+          [session.organizationId, category, stored.url, body.fileName || "listing.jpg", parsed.type, parsed.buffer.length, body.entityType || "scrap_listing", body.entityId || null]
+        );
+        return json(res, 201, { url: stored.url, objectKey: stored.url, provider: "vercel-blob" });
+      }
+      return json(res, 503, { error: "object_storage_not_configured", required: keys });
+    }
+
+    if (!r2Configured()) return json(res, 503, { error: "object_storage_not_configured", required: storageRequired() });
+    if (body.action === "presign") {
+      const size = Number(body.sizeBytes);
+      const type = String(body.contentType || "");
+      if (!allowed.has(type) || !Number.isInteger(size) || size < 1 || size > 10485760) {
+        return json(res, 400, { error: "invalid_file", allowed: [...allowed], maxBytes: 10485760 });
+      }
+      const category = String(body.category || "other").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "other";
+      const key = `organizations/${session.organizationId}/${category}/${randomUUID()}.${extensions[type]}`;
+      return json(res, 200, {
+        uploadUrl: sign(key, "PUT", 600),
+        objectKey: key,
+        expiresIn: 600,
+        method: "PUT",
+        headers: { "Content-Type": type },
+      });
+    }
+    if (body.action === "complete") {
+      const key = String(body.objectKey || "");
+      if (!key.startsWith(`organizations/${session.organizationId}/`)) return json(res, 400, { error: "invalid_object_key" });
+      const saved = await pool.query(
+        `INSERT INTO organization_documents(organization_id,category,object_key,file_name,content_type,size_bytes,entity_type,entity_id)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT(object_key) DO UPDATE SET status='uploaded'
+         RETURNING *`,
+        [session.organizationId, body.category || "other", key, body.fileName, body.contentType, body.sizeBytes, body.entityType || null, body.entityId || null]
+      );
+      return json(res, 201, { document: saved.rows[0] });
+    }
+    return json(res, 400, { error: "invalid_action" });
+  } catch (error) {
+    console.error("upload_error", error);
+    return json(res, 500, { error: "server_error" });
+  }
+};

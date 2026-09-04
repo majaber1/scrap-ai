@@ -1,9 +1,9 @@
 import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
-const required=["index.html","styles.css","hardening.css","simple-market.css","app.js","production-client.js","package.json",".env.example","docs/ARCHITECTURE.md","docs/PRODUCT_AUDIT.md","docs/RELEASE_REPORT.md","docs/FINAL_QA_QC_REPORT.md","assets/logo-mark.svg","assets/logo-lockup.svg","assets/scrap-hero.svg","assets/scrap-copper.svg","assets/scrap-steel.svg","assets/scrap-electronics.svg"];
+const required=["index.html","styles.css","hardening.css","simple-market.css","app.js","production-client.js","package.json",".env.example","docs/ARCHITECTURE.md","docs/IMPLEMENTATION.md","docs/PRODUCT_AUDIT.md","docs/RELEASE_REPORT.md","docs/FINAL_QA_QC_REPORT.md","assets/logo-mark.svg","assets/logo-lockup.svg","assets/scrap-hero.svg","assets/scrap-copper.svg","assets/scrap-steel.svg","assets/scrap-electronics.svg","db/migrations/001_core.sql","db/migrations/002_operations.sql","lib/schema.cjs","lib/r2.cjs","lib/storage.cjs","api/listings.js","api/media.js","vercel.json","scripts/migrate.cjs"];
 for (const file of required) await access(file);
 const html=await readFile("index.html","utf8");
-for(const marker of ["id=\"mainContent\"","id=\"home\"","id=\"analyze\"","id=\"marketplace\"","id=\"dashboard\"","id=\"result\"","id=\"connectionState\"","id=\"menuBtn\"","simple-market.css","scrap-hero.svg","openScrapAccount","production-client.js"]) if(!html.includes(marker)) throw new Error(`Missing ${marker}`);
+for(const marker of ["id=\"mainContent\"","id=\"home\"","id=\"analyze\"","id=\"marketplace\"","id=\"account\"","id=\"accountWorkspace\"","id=\"dashboard\"","id=\"result\"","id=\"connectionState\"","id=\"menuBtn\"","simple-market.css","scrap-hero.svg","openScrapAccount","production-client.js"]) if(!html.includes(marker)) throw new Error(`Missing ${marker}`);
 for(const forbidden of ["Scrap AI by EADA","eada-platform.vercel.app","data-t=\"nav_eada\""]) if(html.includes(forbidden)) throw new Error(`Legacy EADA UI reference still present: ${forbidden}`);
 const hardening=await readFile("hardening.css","utf8");
 if(hardening.includes('premium.css')) throw new Error("Legacy premium dark theme is still imported");
@@ -12,11 +12,16 @@ for(const token of ["bright seller/buyer marketplace UX",".role-actions",".listi
 const logo=await readFile("assets/logo-lockup.svg","utf8");
 if(/EADA|إعادة/.test(logo)) throw new Error("EADA branding remains in Scrap AI logo");
 const app=await readFile("app.js","utf8");
-for(const behavior of ["history.pushState","addEventListener(\"popstate\"","reportValidity()","/api/ai-analyze"]) if(!app.includes(behavior)) throw new Error(`Missing behavior ${behavior}`);
+for(const behavior of ["history.pushState","addEventListener(\"popstate\"","reportValidity()","/api/ai-analyze","/api/listings","loadLiveMarket","publishAnalysisToListing"]) if(!app.includes(behavior)) throw new Error(`Missing behavior ${behavior}`);
 const production=await readFile("production-client.js","utf8");
-for(const behavior of ["/api/auth","/api/workflow","/api/platform","createListing","submitOffer","acceptOffer","submitVerification","recordInspection","advanceTransaction","/api/ai-analyze","prodBuyTab","prodSellTab","buyerWelcome","Seller + Buyer","initialMode(user.kind)"]) if(!production.includes(behavior)) throw new Error(`Missing production behavior ${behavior}`);
+for(const behavior of ["/api/auth","/api/workflow","/api/platform","createListing","submitOffer","acceptOffer","submitVerification","recordInspection","advanceTransaction","/api/ai-analyze","prodBuyTab","prodSellTab","buyerWelcome","Seller + Buyer","initialMode(user.kind)","listingAnalyze","scrap_ai_listing_draft","openScrapSellDraft","accountWorkspace","uploadListingPhoto","/api/upload"]) if(!production.includes(behavior)) throw new Error(`Missing production behavior ${behavior}`);
 for(const forbidden of ["renderEada","renderSource","Production Workspace","const isSeller=[\"seller\"]","const isBuyer=[\"buyer\",\"factory\"]"]) if(production.includes(forbidden)) throw new Error(`Forbidden seller/buyer role gating remains: ${forbidden}`);
 if(!production.includes('["buyer","factory","both"].includes(kind)?"buy":"sell"')) throw new Error("Buyer/both accounts do not default to buying mode");
 if(!production.includes('const sell=mode==="sell",buy=mode==="buy"')) throw new Error("Marketplace is not driven by explicit buy/sell mode");
-for(const file of ["app.js","production-client.js"]){const syntax=spawnSync(process.execPath,["--check",file],{stdio:"inherit"});if(syntax.status!==0)process.exit(syntax.status??1);}
+const schema=await readFile("lib/schema.cjs","utf8");
+if(!schema.includes("001_core.sql")||!schema.includes("ensureSchema")) throw new Error("Schema bootstrap is missing");
+const workflow=await readFile("api/workflow.js","utf8");
+if(!workflow.includes("status = 'declined'")||!workflow.includes("offer_already_submitted")) throw new Error("Offer integrity rules are missing");
+if(!workflow.includes("city_required")) throw new Error("Listing validation is missing");
+for(const file of ["app.js","production-client.js","api/workflow.js","api/listings.js","api/upload.js","api/media.js","lib/schema.cjs","lib/r2.cjs","lib/storage.cjs"]){const syntax=spawnSync(process.execPath,["--check",file],{stdio:"inherit"});if(syntax.status!==0)process.exit(syntax.status??1);}
 console.log("Scrap AI role-safe buyer/seller release checks passed.");

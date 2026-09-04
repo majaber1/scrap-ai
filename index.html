@@ -22,6 +22,7 @@
       <button onclick="showPage('home')" data-t="nav_home" class="nav-active">الرئيسية</button>
       <button onclick="showPage('marketplace')" data-t="nav_market">السوق</button>
       <button onclick="showPage('analyze')" data-t="nav_analyze">حلّل</button>
+      <button onclick="openScrapAccount()" data-t="nav_account">حسابي</button>
     </nav>
     <div class="header-actions">
       <span class="connection" id="connectionState" aria-live="polite">● متصل</span>
@@ -45,7 +46,7 @@
             <p class="hero-desc lang-ar">البائع يعرض الفرصة، المشتري يقدم عرضه، وScrap AI يساعد في تحليل المادة وتوثيقها وإكمال الصفقة من الفحص حتى الاستلام.</p>
             <p class="hero-desc lang-en">Sellers list opportunities, buyers make offers, and Scrap AI assists with material analysis, verification, inspection and pickup.</p>
             <div class="hero-cta">
-              <button class="btn-primary btn-lg" onclick="openScrapAccount()"><span class="lang-ar">+ أضف عرض للبيع</span><span class="lang-en">+ List scrap for sale</span></button>
+              <button class="btn-primary btn-lg" onclick="openScrapAccount('sell')"><span class="lang-ar">+ أضف عرض للبيع</span><span class="lang-en">+ List scrap for sale</span></button>
               <button class="btn-outline btn-lg" onclick="showPage('marketplace')"><span class="lang-ar">تصفح فرص الشراء</span><span class="lang-en">Browse opportunities</span></button>
             </div>
             <div class="hero-trust simple-trust">
@@ -86,7 +87,7 @@
 
         <div class="cta-banner simple-cta">
           <div><h2><span class="lang-ar">عندك سكراب للبيع؟</span><span class="lang-en">Have scrap to sell?</span></h2><p><span class="lang-ar">افتح حسابك وأضف العرض مباشرة. التحليل بالـAI اختياري ويساعدك في التوثيق.</span><span class="lang-en">Open your account and list it directly. AI analysis is optional and helps with verification.</span></p></div>
-          <button class="btn-primary btn-lg" onclick="openScrapAccount()"><span class="lang-ar">أضف عرض الآن</span><span class="lang-en">Create listing</span></button>
+          <button class="btn-primary btn-lg" onclick="openScrapAccount('sell')"><span class="lang-ar">أضف عرض الآن</span><span class="lang-en">Create listing</span></button>
         </div>
       </div>
     </section>
@@ -132,8 +133,8 @@
         </div>
 
         <div class="role-actions">
-          <button class="role-card seller-role" onclick="openScrapAccount()"><span class="role-icon">📦</span><div><strong><span class="lang-ar">أنا بائع</span><span class="lang-en">I'm a seller</span></strong><small><span class="lang-ar">أضف بضاعة جديدة</span><span class="lang-en">Create a new listing</span></small></div><span>←</span></button>
-          <button class="role-card buyer-role" onclick="openScrapAccount()"><span class="role-icon">🛒</span><div><strong><span class="lang-ar">أنا مشتري</span><span class="lang-en">I'm a buyer</span></strong><small><span class="lang-ar">سجل الدخول وقدّم عرض شراء</span><span class="lang-en">Sign in and make an offer</span></small></div><span>←</span></button>
+          <button class="role-card seller-role" onclick="openScrapAccount('sell')"><span class="role-icon">📦</span><div><strong><span class="lang-ar">أنا بائع</span><span class="lang-en">I'm a seller</span></strong><small><span class="lang-ar">أضف بضاعة جديدة</span><span class="lang-en">Create a new listing</span></small></div><span>←</span></button>
+          <button class="role-card buyer-role" onclick="openScrapAccount('buy')"><span class="role-icon">🛒</span><div><strong><span class="lang-ar">أنا مشتري</span><span class="lang-en">I'm a buyer</span></strong><small><span class="lang-ar">سجل الدخول وقدّم عرض شراء</span><span class="lang-en">Sign in and make an offer</span></small></div><span>←</span></button>
         </div>
 
         <div class="market-stats compact-stats">
@@ -148,7 +149,19 @@
           <div class="sort-controls"><select id="marketSort" onchange="sortMarket()"><option value="newest" data-t="sort_new">الأحدث</option><option value="price_high" data-t="sort_high">السعر: الأعلى</option><option value="price_low" data-t="sort_low">السعر: الأقل</option><option value="weight" data-t="sort_weight">الوزن</option></select></div>
         </div>
         <div class="listings-grid" id="listingsGrid"></div>
-        <div class="create-listing-bar"><div><h3><span class="lang-ar">عندك سكراب للبيع؟</span><span class="lang-en">Have scrap to sell?</span></h3><p><span class="lang-ar">أضف العرض مباشرة، وبعدها استخدم AI إذا احتجت تحليل أو توثيق.</span><span class="lang-en">List it directly, then use AI when you need analysis or verification.</span></p></div><button class="btn-primary" onclick="openScrapAccount()"><span class="lang-ar">+ أضف بضاعة</span><span class="lang-en">+ Add listing</span></button></div>
+        <div class="create-listing-bar"><div><h3><span class="lang-ar">عندك سكراب للبيع؟</span><span class="lang-en">Have scrap to sell?</span></h3><p><span class="lang-ar">أضف العرض مباشرة، وبعدها استخدم AI إذا احتجت تحليل أو توثيق.</span><span class="lang-en">List it directly, then use AI when you need analysis or verification.</span></p></div><button class="btn-primary" onclick="openScrapAccount('sell')"><span class="lang-ar">+ أضف بضاعة</span><span class="lang-en">+ Add listing</span></button></div>
+      </div>
+    </section>
+
+    <section id="account" class="page">
+      <div class="shell">
+        <div class="page-header simple-page-header">
+          <button class="back-btn" onclick="showPage('home')">← <span class="lang-ar">رجوع</span><span class="lang-en">Back</span></button>
+          <span class="badge"><span class="lang-ar">حسابك</span><span class="lang-en">Your account</span></span>
+          <h1><span class="lang-ar">بيع، شراء، وإكمال الصفقة</span><span class="lang-en">Sell, buy, and complete the deal</span></h1>
+          <p><span class="lang-ar">نفس الحساب للبيع والشراء. الصورة أولاً، والعرض يظهر في السوق مباشرة.</span><span class="lang-en">The same account sells and buys. Photo first, then the listing goes live on the market.</span></p>
+        </div>
+        <div id="accountWorkspace"></div>
       </div>
     </section>
 
@@ -171,12 +184,5 @@
   <script src="app.js"></script>
   <script>window.PRODUCTION_PLATFORM="scrap";</script>
   <script src="production-client.js"></script>
-  <script>
-    function openScrapAccount(){ document.getElementById('prodOpen')?.click(); }
-    const prodOpen=document.getElementById('prodOpen');
-    if(prodOpen){ prodOpen.setAttribute('aria-hidden','true'); prodOpen.tabIndex=-1; }
-    const prodTitle=document.querySelector('#prodLayer .prodTop b');
-    if(prodTitle) prodTitle.textContent=document.documentElement.lang==='en'?'Scrap AI Account':'حساب Scrap AI';
-  </script>
 </body>
 </html>
