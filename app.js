@@ -1,7 +1,7 @@
 /* ===== TRANSLATIONS ===== */
 const copy = {
   ar: {
-    nav_home:"الرئيسية", nav_analyze:"حلّل", nav_market:"السوق", nav_dash:"لوحة التحكم", nav_eada:"منصة إعادة",
+    nav_home:"الرئيسية", nav_analyze:"حلّل", nav_market:"السوق", nav_account:"حسابي", nav_dash:"لوحة التحكم", nav_eada:"منصة إعادة",
     hero_badge:"مدعوم بالذكاء الاصطناعي", hero_title:'صوّر. حلّل.<br><em>تداول بذكاء.</em>', hero_desc:"منصة متكاملة لتحليل السكراب بالذكاء الاصطناعي، أسعار السوق اللحظية، ومطابقة المشترين والبائعين في السوق السعودي.", hero_cta:"ابدأ التحليل مجاناً", hero_cta2:"تصفح السوق", hero_materials:"فئات مواد", hero_routes:"مسارات قيمة", hero_currency:"أسعار محلية", hero_ai:"تحليل ذكي",
     fc_copper:"نحاس", fc_alum:"ألمنيوم", fc_steel:"حديد",
     how_badge:"كيف تعمل المنصة", how_title:"من الصورة إلى الصفقة في 60 ثانية",
@@ -55,7 +55,7 @@ const copy = {
     no_history:"لا توجد تحليلات بعد", no_listings:"لا توجد مسودات بعد"
   },
   en: {
-    nav_home:"Home", nav_analyze:"Analyze", nav_market:"Market", nav_dash:"Dashboard", nav_eada:"EADA Platform",
+    nav_home:"Home", nav_analyze:"Analyze", nav_market:"Market", nav_account:"Account", nav_dash:"Dashboard", nav_eada:"EADA Platform",
     hero_badge:"AI-Powered", hero_title:'Snap. Analyze.<br><em>Trade Smart.</em>', hero_desc:"All-in-one platform for AI scrap analysis, live Saudi market prices, and buyer-seller matching.", hero_cta:"Start Free Analysis", hero_cta2:"Browse Market", hero_materials:"Material classes", hero_routes:"Value routes", hero_currency:"Local prices", hero_ai:"Smart analysis",
     fc_copper:"Copper", fc_alum:"Aluminum", fc_steel:"Steel",
     how_badge:"How It Works", how_title:"From photo to deal in 60 seconds",
@@ -144,6 +144,8 @@ const sampleBuyers = [
 /* ===== STATE ===== */
 let lang = localStorage.getItem("scrap_ai_lang") || "ar";
 let currentFilter = "all";
+let liveListings = [];
+let marketStatus = "loading";
 
 /* ===== HELPERS ===== */
 function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
@@ -169,7 +171,7 @@ function applyLang() {
   document.getElementById("skipLink").textContent = t("skip");
   renderTicker();
   renderPriceGrid();
-  renderMarketplace();
+  loadLiveMarket();
   renderDashboard();
   renderAlerts();
   updateConnectionState();
@@ -215,12 +217,13 @@ function showPage(id, opts = {}) {
   });
   document.querySelectorAll("nav button[data-t]").forEach(btn => {
     const page = btn.dataset.t.replace("nav_", "");
-    btn.classList.toggle("nav-active", page === id);
+    btn.classList.toggle("nav-active", page === id || (page === "market" && id === "marketplace"));
   });
   closeMenu();
   if (updateHistory && location.hash !== `#${id}`) history.pushState({ page: id }, "", `#${id}`);
   if (id === "dashboard") renderDashboard();
-  if (id === "marketplace") renderMarketplace();
+  if (id === "marketplace") loadLiveMarket();
+  if (id === "account") window.bootScrapWorkspace?.();
   scrollTo(0, 0);
   target.focus({ preventScroll: true });
 }
@@ -307,6 +310,20 @@ function publicImageData(file) {
 }
 
 const safeAi = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
+let lastAiResult = null;
+
+function publishAnalysisToListing() {
+  const weight = Math.min(100000000, Math.max(1, +document.getElementById("weight")?.value || 1));
+  const draft = {
+    material: lastAiResult?.materialType || document.getElementById("material")?.value || "mixed",
+    title: lastAiResult ? (lang === "ar" ? lastAiResult.materialLabelAr : lastAiResult.materialLabelEn) : "",
+    quantity: weight,
+    analysisLabel: lastAiResult ? `${lang === "ar" ? lastAiResult.materialLabelAr : lastAiResult.materialLabelEn} · ${lastAiResult.grade || ""}` : ""
+  };
+  sessionStorage.setItem("scrap_ai_listing_draft", JSON.stringify(draft));
+  if (typeof openScrapSellDraft === "function") openScrapSellDraft(draft);
+  else openScrapAccount();
+}
 
 async function analyze() {
   const weightInput = document.getElementById("weight");
@@ -323,12 +340,13 @@ async function analyze() {
     const response = await fetch("/api/ai-analyze", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ imageDataUrl, estimatedWeightKg:weight, notes:`sorting=${clean}; goal=${goal}` }) });
     const payload = await response.json().catch(() => ({}));
     if (response.status === 401) {
-      result.innerHTML = `<div class="empty-state"><h2>${lang === "ar" ? "سجل الدخول لتشغيل تحليل OpenAI الحقيقي" : "Sign in to run real OpenAI analysis"}</h2><p>${lang === "ar" ? "افتح حساب الإنتاج ثم أعد التحليل." : "Open the Production account, then run the analysis again."}</p><button class="btn-primary" onclick="document.getElementById('prodOpen').click()">${lang === "ar" ? "فتح حساب الإنتاج" : "Open Production account"}</button></div>`;
+      result.innerHTML = `<div class="empty-state"><h2>${lang === "ar" ? "سجل الدخول لتشغيل تحليل OpenAI الحقيقي" : "Sign in to run real OpenAI analysis"}</h2><p>${lang === "ar" ? "افتح حسابك ثم أعد التحليل." : "Open your account, then run the analysis again."}</p><button class="btn-primary" onclick="openScrapAccount()">${lang === "ar" ? "فتح الحساب" : "Open account"}</button></div>`;
       return;
     }
     if (!response.ok) throw new Error(payload.error || "analysis_failed");
     const a = payload.analysis, confidence = Math.round(Number(a.confidence) * 100);
-    result.innerHTML = `<div class="result-identify"><div><span class="material-chip">🤖 ${safeAi(lang === "ar" ? a.materialLabelAr : a.materialLabelEn)}</span><p class="confidence">${t("confidence_label")}: ${confidence}%</p><div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%"></div></div></div></div><div class="result-metrics"><div class="metric-card"><span>${t("purity_label")}</span><strong>${Math.round(Number(a.purityEstimatePercent))}%</strong></div><div class="metric-card"><span>${lang === "ar" ? "الدرجة" : "Grade"}</span><strong>${safeAi(a.grade)}</strong></div><div class="metric-card"><span>${t("weight_label")}</span><strong>${fmt(weight)} kg</strong></div></div><div class="result-route"><small>${lang === "ar" ? "ملاحظات الصورة" : "Image observations"}</small><p>${safeAi(lang === "ar" ? a.observationsAr : a.observationsEn)}</p><h3>${lang === "ar" ? "الفحص المطلوب" : "Required inspection"}</h3><p>${safeAi(lang === "ar" ? a.recommendedInspectionAr : a.recommendedInspectionEn)}</p><p class="disclaimer">${safeAi(lang === "ar" ? a.pricingCaveatAr : a.pricingCaveatEn)}</p></div><div class="result-actions"><button class="btn-listing" onclick="document.getElementById('prodOpen').click()">${lang === "ar" ? "إنشاء عرض إنتاجي" : "Create production listing"}</button></div>`;
+    lastAiResult = a;
+    result.innerHTML = `<div class="result-identify"><div><span class="material-chip">🤖 ${safeAi(lang === "ar" ? a.materialLabelAr : a.materialLabelEn)}</span><p class="confidence">${t("confidence_label")}: ${confidence}%</p><div class="confidence-bar"><div class="confidence-fill" style="width:${confidence}%"></div></div></div></div><div class="result-metrics"><div class="metric-card"><span>${t("purity_label")}</span><strong>${Math.round(Number(a.purityEstimatePercent))}%</strong></div><div class="metric-card"><span>${lang === "ar" ? "الدرجة" : "Grade"}</span><strong>${safeAi(a.grade)}</strong></div><div class="metric-card"><span>${t("weight_label")}</span><strong>${fmt(weight)} kg</strong></div></div><div class="result-route"><small>${lang === "ar" ? "ملاحظات الصورة" : "Image observations"}</small><p>${safeAi(lang === "ar" ? a.observationsAr : a.observationsEn)}</p><h3>${lang === "ar" ? "الفحص المطلوب" : "Required inspection"}</h3><p>${safeAi(lang === "ar" ? a.recommendedInspectionAr : a.recommendedInspectionEn)}</p><p class="disclaimer">${safeAi(lang === "ar" ? a.pricingCaveatAr : a.pricingCaveatEn)}</p></div><div class="result-actions"><button class="btn-listing" onclick="publishAnalysisToListing()">${lang === "ar" ? "انشر كعرض في السوق" : "Publish as a market listing"}</button></div>`;
   } catch (error) {
     result.innerHTML = `<div class="empty-state"><h2>${lang === "ar" ? "تعذر التحليل" : "Analysis unavailable"}</h2><p>${safeAi(error.message)}</p></div>`;
   }
@@ -382,66 +400,80 @@ function showBuyerMatch(material) {
 function closeMatchModal() { document.getElementById("matchModal").classList.remove("open"); }
 
 /* ===== MARKETPLACE ===== */
+async function loadLiveMarket() {
+  const grid = document.getElementById("listingsGrid");
+  if (grid && marketStatus === "loading") {
+    grid.innerHTML = `<div class="empty-state small"><p>${lang === "ar" ? "جاري تحميل العروض الحقيقية..." : "Loading live listings..."}</p></div>`;
+  }
+  try {
+    const response = await fetch("/api/listings");
+    const payload = await response.json().catch(() => ({ listings: [] }));
+    liveListings = Array.isArray(payload.listings) ? payload.listings : [];
+    marketStatus = response.ok ? "ready" : "error";
+  } catch {
+    liveListings = [];
+    marketStatus = "error";
+  }
+  renderMarketplace();
+}
+
 function renderMarketplace() {
   const grid = document.getElementById("listingsGrid");
   if (!grid) return;
 
-  const userListings = read("scrap_ai_listings", []);
-  const allListings = [...sampleListings, ...userListings.map(l => ({
-    ...l,
-    city: lang === "ar" ? "ar:الرياض|en:Riyadh" : "ar:الرياض|en:Riyadh",
-    seller: lang === "ar" ? "ar:أنت|en:You" : "ar:أنت|en:You",
-    verified: false
-  }))];
-
-  let filtered = currentFilter === "all" ? allListings : allListings.filter(l => l.material === currentFilter);
+  let filtered = liveListings.filter((listing) => currentFilter === "all" || listing.material === currentFilter);
 
   const search = document.getElementById("marketSearch")?.value?.toLowerCase() || "";
   if (search) {
-    filtered = filtered.filter(l =>
-      (catalog[l.material]?.[lang] || "").toLowerCase().includes(search) ||
-      localized(l.city).toLowerCase().includes(search) ||
-      localized(l.seller).toLowerCase().includes(search) ||
-      l.id.toLowerCase().includes(search)
+    filtered = filtered.filter((listing) =>
+      `${listing.title || ""} ${listing.city || ""} ${listing.seller_name || ""} ${listing.material || ""}`.toLowerCase().includes(search)
     );
   }
 
   const sort = document.getElementById("marketSort")?.value || "newest";
-  if (sort === "price_high") filtered.sort((a, b) => b.value - a.value);
-  else if (sort === "price_low") filtered.sort((a, b) => a.value - b.value);
-  else if (sort === "weight") filtered.sort((a, b) => b.weight - a.weight);
+  if (sort === "price_high") filtered.sort((a, b) => Number(b.indicative_value || 0) - Number(a.indicative_value || 0));
+  else if (sort === "price_low") filtered.sort((a, b) => Number(a.indicative_value || 0) - Number(b.indicative_value || 0));
+  else if (sort === "weight") filtered.sort((a, b) => Number(b.quantity || 0) - Number(a.quantity || 0));
+  else filtered.sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
 
-  const stats = read("scrap_ai_listings", []);
-  document.getElementById("marketListings").textContent = fmt(allListings.length);
-  document.getElementById("marketBuyers").textContent = fmt(sampleBuyers.length);
-  document.getElementById("marketVolume").textContent = `${fmt(allListings.reduce((s, l) => s + l.value, 0))} SAR`;
+  const listingsEl = document.getElementById("marketListings");
+  const buyersEl = document.getElementById("marketBuyers");
+  if (listingsEl) listingsEl.textContent = fmt(liveListings.length);
+  if (buyersEl) buyersEl.textContent = "—";
 
-  grid.innerHTML = filtered.map(l => {
-    const mat = catalog[l.material] || catalog.mixed;
+  if (marketStatus === "error") {
+    grid.innerHTML = `<div class="empty-state small"><p>${lang === "ar" ? "تعذر تحميل السوق المباشر. أعد المحاولة." : "Live market could not be loaded. Try again."}</p><button class="btn-primary" onclick="loadLiveMarket()">${lang === "ar" ? "إعادة التحميل" : "Reload"}</button></div>`;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state small"><p>${lang === "ar" ? "لا توجد عروض مفتوحة حالياً. كن أول من ينشر." : "No open listings yet. Be the first to publish."}</p><button class="btn-primary" onclick="openScrapAccount('sell')">${lang === "ar" ? "+ أضف بضاعة" : "+ Add listing"}</button></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((listing) => {
+    const mat = catalog[listing.material] || catalog.mixed;
+    const qty = listing.quantity ? `${fmt(listing.quantity)} ${listing.unit || "kg"}` : (lang === "ar" ? "الوزن عند التفاوض" : "Weight by negotiation");
+    const price = listing.indicative_value ? `${fmt(listing.indicative_value)} SAR` : (lang === "ar" ? "السعر عند التفاوض" : "Price by negotiation");
+    const photo = listing.image || "";
     return `<div class="listing-card">
-      <div class="listing-img">${mat.icon}<span class="listing-status">${t("listing_active")}</span></div>
+      <div class="listing-img">${photo ? `<img src="${safeAi(photo)}" alt="">` : mat.icon}<span class="listing-status">${t("listing_active")}</span></div>
       <div class="listing-body">
-        <h3>${mat[lang]}</h3>
+        <h3>${safeAi(listing.title || mat[lang])}</h3>
         <div class="listing-meta">
-          <span>📍 ${localized(l.city)}</span>
-          <span>⚖️ ${fmt(l.weight)} kg</span>
-          ${l.verified ? '<span>✅</span>' : ''}
+          <span>📍 ${safeAi(listing.city || "")}</span>
+          <span>⚖️ ${qty}</span>
+          <span>${safeAi(listing.seller_name || "")}</span>
         </div>
         <div class="listing-price">
-          <div><strong>${fmt(l.value)} SAR</strong><br><small>${(l.value / l.weight).toFixed(1)} SAR/kg</small></div>
-          <span style="font-size:11px;color:var(--muted)">${l.id}</span>
+          <div><strong>${price}</strong><br><small>${safeAi(mat[lang])}</small></div>
         </div>
         <div class="listing-actions">
-          <button class="btn-listing" onclick="toast('${l.id}')">${t("listing_view")}</button>
-          <button class="btn-match" onclick="toast('${t("match_msg")}')">${t("listing_contact")}</button>
+          <button class="btn-listing" onclick="openScrapAccount('buy')">${lang === "ar" ? "قدّم عرض شراء" : "Make an offer"}</button>
         </div>
       </div>
     </div>`;
   }).join("");
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div class="empty-state small"><p>${t("no_listings")}</p></div>`;
-  }
 }
 
 function filterByMaterial(mat) {
@@ -581,7 +613,7 @@ window.addEventListener("error", event => {
 /* ===== ROUTING ===== */
 window.addEventListener("popstate", () => {
   const hash = location.hash.slice(1);
-  const valid = ["home", "analyze", "marketplace", "dashboard"];
+  const valid = ["home", "analyze", "marketplace", "account", "dashboard"];
   showPage(valid.includes(hash) ? hash : "home", { updateHistory: false });
 });
 
@@ -591,5 +623,5 @@ applyTheme();
 updateConnectionState();
 
 const initPage = location.hash.slice(1);
-const validPages = ["home", "analyze", "marketplace", "dashboard"];
+const validPages = ["home", "analyze", "marketplace", "account", "dashboard"];
 showPage(validPages.includes(initPage) ? initPage : "home", { updateHistory: false });

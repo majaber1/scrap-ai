@@ -6,18 +6,18 @@ The product is intentionally simple. AI is an assistant to the transaction, not 
 
 ## Operational source of truth
 
-Last reviewed: **2026-08-27**.
+Last reviewed: **2026-09-05**. Architecture is locked in `docs/ARCHITECTURE.md`.
 
 | Layer | Canonical source | Current state |
 | --- | --- | --- |
-| Code | `main` in this repository | Static bilingual frontend + serverless `/api/*` backend |
+| Code | this repository | Static bilingual frontend + serverless `/api/*` + SQL migrations |
 | Production | `https://scrap-ai.vercel.app` | Vercel production |
 | Health | `GET /api/health` | Reports DB/session plus AI/storage readiness |
-| Database | `DATABASE_URL` | PostgreSQL-backed accounts, listings, offers, pickups and platform records |
+| Database | `DATABASE_URL` + `db/migrations/` | PostgreSQL accounts, listings, offers, pickups, transactions |
 | Sessions | `SESSION_SECRET` | Signed HttpOnly production sessions |
-| AI | `OPENAI_API_KEY` + optional `OPENAI_MODEL` | Image/material analysis assistant |
-| Object storage | Cloudflare R2 via `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Private inspection/evidence uploads when configured |
-| Architecture | `docs/ARCHITECTURE.md` | Canonical architecture document |
+| AI | `OPENAI_API_KEY` + optional `OPENAI_MODEL` | Indicative image analysis only |
+| Object storage | Cloudflare R2 | Private evidence when configured |
+| Architecture | `docs/ARCHITECTURE.md` | **Locked** product, AI, stack, and phases |
 
 **Runtime health and live journey tests override prose.** Historical QA reports remain evidence only for the date they were recorded.
 
@@ -50,6 +50,7 @@ Last reviewed: **2026-08-27**.
 ## Current production APIs
 
 - `api/auth.js` — account/session operations
+- `api/listings.js` — public open listings for the market page
 - `api/workflow.js` — listings, offers, acceptance and pickup creation
 - `api/platform.js` — verification, transaction stages, inspection, payment records and disputes
 - `api/ai-analyze.js` — AI image/material analysis
@@ -116,7 +117,8 @@ Never commit secret values. The health endpoint reports only safe readiness stat
 
 See:
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — locked product and system architecture
+- [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) — phases and delivery
 - [`docs/PRODUCT_AUDIT.md`](docs/PRODUCT_AUDIT.md)
 - [`docs/FINAL_QA_QC_REPORT.md`](docs/FINAL_QA_QC_REPORT.md)
 - [`docs/LIVE_QA_REPORT.md`](docs/LIVE_QA_REPORT.md)

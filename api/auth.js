@@ -1,8 +1,10 @@
 const { pool, hashPassword, verifyPassword, setSession, clearSession, session, json } = require("../lib/server.cjs");
+const { ensureSchema } = require("../lib/schema.cjs");
 
 module.exports = async function handler(req, res) {
   if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) return json(res, 503, { error: "production_not_configured" });
   try {
+    await ensureSchema(pool);
     if (req.method === "GET") {
       const current = session(req);
       if (!current) return json(res, 200, { user: null });

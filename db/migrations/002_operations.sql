@@ -1,0 +1,105 @@
+-- Operations tables. Idempotent. Depends on 001_core.sql.
+CREATE TABLE IF NOT EXISTS workflow_policies (
+  policy_key text PRIMARY KEY,
+  version integer NOT NULL DEFAULT 1,
+  config jsonb NOT NULL,
+  sources jsonb NOT NULL DEFAULT '[]',
+  active boolean NOT NULL DEFAULT true,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS organization_verifications (
+  organization_id uuid PRIMARY KEY REFERENCES organizations(id) ON DELETE CASCADE,
+  role_type text NOT NULL,
+  legal_name text NOT NULL,
+  registration_number text NOT NULL,
+  tax_number text,
+  license_number text,
+  status text NOT NULL DEFAULT 'pending',
+  evidence jsonb NOT NULL DEFAULT '[]',
+  submitted_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS organization_documents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  category text NOT NULL,
+  object_key text NOT NULL UNIQUE,
+  file_name text NOT NULL,
+  content_type text NOT NULL,
+  size_bytes integer NOT NULL,
+  entity_type text,
+  entity_id text,
+  status text NOT NULL DEFAULT 'uploaded',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS scrap_transactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  offer_id uuid UNIQUE NOT NULL REFERENCES offers(id) ON DELETE CASCADE,
+  listing_id uuid NOT NULL REFERENCES scrap_listings(id),
+  seller_org_id uuid NOT NULL REFERENCES organizations(id),
+  buyer_org_id uuid NOT NULL REFERENCES organizations(id),
+  stage text NOT NULL DEFAULT 'inspection_scheduled',
+  estimated_weight numeric,
+  inspected_weight numeric,
+  purity_percent numeric,
+  price_per_unit numeric,
+  final_amount numeric,
+  pickup_at timestamptz,
+  pickup_address text,
+  weighbridge_ticket text,
+  collection_proof text,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS payment_records (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  transaction_id uuid NOT NULL REFERENCES scrap_transactions(id) ON DELETE CASCADE,
+  amount numeric NOT NULL,
+  currency text NOT NULL DEFAULT 'SAR',
+  method text NOT NULL,
+  reference text,
+  status text NOT NULL DEFAULT 'pending_review',
+  proof_object_key text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS disputes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  transaction_id uuid NOT NULL REFERENCES scrap_transactions(id) ON DELETE CASCADE,
+  opened_by_org_id uuid NOT NULL REFERENCES organizations(id),
+  reason text NOT NULL,
+  description text NOT NULL,
+  evidence jsonb NOT NULL DEFAULT '[]',
+  status text NOT NULL DEFAULT 'open',
+  resolution text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  resolved_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS ai_analyses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  image_sha256 text NOT NULL,
+  mime_type text NOT NULL,
+  model text NOT NULL,
+  response_id text,
+  context jsonb NOT NULL DEFAULT '{}',
+  result jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ai_analyses_org_created_idx ON ai_analyses (organization_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS scrap_transactions_orgs_idx ON scrap_transactions (seller_org_id, buyer_org_id, created_at DESC);
+
+INSERT INTO workflow_policies (policy_key, version, config, sources)
+VALUES (
+  'scrap_market_v1',
+  1,
+  '{"stages":["inspection_scheduled","inspected","final_weight_confirmed","pickup_scheduled","collected","settlement_pending","settled","closed"],"requiredEvidence":{"inspection":["material_photos","inspection_report"],"weight":["weighbridge_ticket"],"collection":["pickup_proof"]},"paymentNotice":"Bank transfer record only until a licensed PSP is connected"}',
+  '[{"name":"Doum","url":"https://doum.com.sa/en"},{"name":"aScraps","url":"https://ascraps.com/"},{"name":"OxCira","url":"https://oxcira.sa/en"}]'
+)
+ON CONFLICT (policy_key) DO NOTHING;
