@@ -1,19 +1,19 @@
 # Scrap AI V2 — Current State Audit
 
 **Audit date:** 2026-09-05  
-**Evidence sources:** repository runtime code, `db/migrations`, live `GET https://scrap-ai.vercel.app/api/health`, Git refs, Vercel production logs from prior Gemini 404 / Groq JSON failures.  
+**Evidence sources:** repository runtime code, `db/migrations`, live `GET https://scrap-ai.vercel.app/api/health`, `npm run test:ai`, production browser UI on `#analyze` / `#account` / `#dashboard`. Architecture baseline (ADR-001 and sibling `docs/architecture/*` specs) is unchanged; this file records Phase 0 evidence only.  
 **Docs are not treated as production truth.** `docs/ARCHITECTURE.md` (LOCKED marketplace) is superseded for *product boundary* by ADR-001 after this audit; it remains a historical V1 record.
 
 ---
 
 ## Executive snapshot
 
-Scrap AI production is a **Vercel static HTML/CSS/JS site + Node serverless `api/*.js` + PostgreSQL + Vercel Blob + multi-provider vision AI**. It is a **seller/buyer marketplace with optional indicative image analysis**, not a circular-materials operating system.
+Scrap AI production is a **Vercel static HTML/CSS/JS site + Node serverless `api/*.js` + PostgreSQL + Vercel Blob + multi-provider vision AI**. Target product (ADR-001) is a circular materials OS; **Phase 0 live slice** is real signed-in image analysis with persistence, telemetry, and honest disconnected prices.
 
-Live health (this audit):
+Live health at E2E SHA `b1370c7302c8530585afb47c07ffd8ffe935c802` / `dpl_D3SPFZe7i7ePsE8a1DTe8JekPUAe`:
 
 ```json
-{"status":"ok","database":true,"session":true,"ai":true,"aiProvider":"gemini","aiModel":"gemini-3.6-flash","storage":true,"storageProvider":"vercel-blob"}
+{"status":"ok","database":true,"session":true,"ai":true,"aiProvider":"gemini","storage":true,"storageProvider":"vercel-blob","gitSha":"b1370c7302c8530585afb47c07ffd8ffe935c802","env":"production"}
 ```
 
 ---
@@ -22,13 +22,12 @@ Live health (this audit):
 
 | Item | Evidence |
 | --- | --- |
-| Working branch | `ai-first-working` @ `0afed36` — *Enable Vercel Blob listing photos and lock the marketplace foundation.* |
-| Tracks | `origin/ai-first-working` |
-| `main` | `273b1e4` — older “bright seller-buyer marketplace”; **diverged** |
-| Uncommitted local work | AI (`lib/ai.cjs`), materials, health, listings/workflow, UI, docs, `.env.example` — **present at audit time** |
-| Production updates | Direct `vercel --prod` from local tree occurred; GitHub `main` is **not** guaranteed to match production |
+| Working branch | `ai-first-working` |
+| Production gitSha at E2E | `b1370c7302c8530585afb47c07ffd8ffe935c802` |
+| `main` | Older marketplace line; production of this slice is `ai-first-working` via promote |
+| Phase 0 product code | Intelligence engine, GET/POST `/api/ai-analyze`, schema lock — live on that SHA |
 
-**GITHUB/PRODUCTION DRIFT:** YES (until Phase 0 commit + deploy from that commit).
+**GITHUB/PRODUCTION DRIFT:** **NO** for Phase 0 product runtime at the E2E SHA above (`health.gitSha` matched `EXPECTED_GIT_SHA`). Follow-up commits that only add the labeled scrap fixture + this scoreboard must be promoted before claiming drift NO on a newer SHA.
 
 ---
 
@@ -136,20 +135,21 @@ Shipped in working tree (pending production deploy + Git push):
 - Architecture tests: `scripts/architecture-check.mjs`
 - Production E2E script: `npm run test:ai` (register → real photo → POST → GET)
 
-**Production deploy of this slice was not executed in the agent session** (live deploy blocked). Until `vercel --prod` (or Git production deploy) and `npm run test:ai` pass, Phase 0 is **not complete**.
+Production of this slice is live (`dpl_D3SPFZe7i7ePsE8a1DTe8JekPUAe`). Fixture used for E2E/UI: `tests/fixtures/PHASE0_TEST_FIXTURE_scrap_photo.jpg` (Wikimedia scrap-metal pile, test-only; no hardcoded material/price assertions).
 
 ## Phase 0 scoreboard
 
 | Gate | Status | Notes |
 | --- | --- | --- |
-| IMAGE ANALYSIS | **FAIL** (production unproven for this commit) | Engine implemented; live alias still previous deploy until promoted |
-| REAL PROVIDER | gemini (health of current prod) | Confirm on new deploy analyze body |
-| REAL MODEL | gemini-3.6-flash (health) | Confirm on new deploy analyze body |
-| PRODUCTION E2E | **FAIL** | `npm run test:ai` not yet run against a deploy of this code |
-| RESULT PERSISTED | **FAIL** as production proof | Code path exists; not E2E-proven on this SHA |
-| RESULT SURVIVES REFRESH | **FAIL** as production proof | GET implemented; not on live until deploy |
-| GITHUB/PRODUCTION DRIFT | **YES** | Uncommitted/unpushed V2 + prior CLI deploys |
-| DATABASE | **PASS** connectivity; lock **in code, not live until migrate** | Advisory lock + 003 |
-| AUTH | **PASS** sessions | Analyze still requires session |
+| IMAGE ANALYSIS | **PASS** | Production `#analyze` file input → `publicImageData` → `POST /api/ai-analyze`; `npm run test:ai` HTTP 200 |
+| REAL PROVIDER | **PASS** | UI + API telemetry `gemini` (not mock) |
+| REAL MODEL | **PASS** | UI `gemini-3.5-flash-lite`; earlier same SHA `gemini-3.7-flash`. Health lists configured Gemini/Groq models. |
+| PRODUCTION E2E | **PASS** | `EXPECTED_GIT_SHA=b1370c7… npm run test:ai` PASS. Schema only: `estimateKind`, `labCertifiedPurity`, `physicalConfirmationRequired`, labels, confidence, provider/model/fallback/latency |
+| RESULT PERSISTED | **PASS** | Analysis ids returned; `GET /api/ai-analyze` count ≥ 1; UI analysis id in session |
+| RESULT SURVIVES REFRESH | **PASS** | After navigation: `#result` still showed تقدير بصري + provider/model; account card `تقدير بصري — ليس فحص مختبر`; dashboard `#history` listed تقدير بصري · gemini; GET still returned the id |
+| BROWSER VISIBILITY | **PASS** | Signed-in production UI, not API-only |
+| GITHUB/PRODUCTION DRIFT | **NO** | Live `gitSha` matched E2E SHA for product code |
+| DATABASE | **PASS** | Health `database: true`; analyses persist |
+| AUTH | **PASS** | Analyze requires session; re-login GET in `test:ai` PASS |
 
-Do not mark Phase 0 complete until every mandatory row is a genuine PASS (drift NO after push).
+Phase 0 product exit is **PASS** on the evidence above. Do not start Phase 1 until a later SHA is promoted if you need the labeled fixture file itself on the production gitSha.
