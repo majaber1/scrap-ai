@@ -84,16 +84,20 @@ module.exports = async function handler(req, res) {
       const user = await client.query("INSERT INTO users(email,password_hash,full_name,active_organization_id) VALUES($1,$2,$3,$4) RETURNING id,email,full_name", [email, hashPassword(password), fullName, org.rows[0].id]);
       await client.query("INSERT INTO memberships(user_id,organization_id,role) VALUES($1,$2,$3)", [user.rows[0].id, org.rows[0].id, "owner"]);
       await ensureMembershipRoles(client, user.rows[0].id, org.rows[0].id, "owner");
-      await writeAudit(client, {
-        actorUserId: user.rows[0].id,
-        organizationId: org.rows[0].id,
-        action: "user.login",
-        entityType: "user",
-        entityId: user.rows[0].id,
-        metadata: { source: "register" },
-        ip: clientIp(req),
-      });
       await client.query("COMMIT");
+      try {
+        await writeAudit(pool, {
+          actorUserId: user.rows[0].id,
+          organizationId: org.rows[0].id,
+          action: "user.login",
+          entityType: "user",
+          entityId: user.rows[0].id,
+          metadata: { source: "register" },
+          ip: clientIp(req),
+        });
+      } catch (error) {
+        console.error("register_audit_failed", error);
+      }
       setSession(res, { userId: user.rows[0].id, organizationId: org.rows[0].id, role: "owner" });
       return json(res, 201, { user: { ...user.rows[0], organization_id: org.rows[0].id, organization_name: org.rows[0].name, kind, customer_segment: org.rows[0].customer_segment, role: "owner" } });
     } catch (error) {

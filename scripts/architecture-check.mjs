@@ -40,7 +40,7 @@ if (app.includes("sampleBuyers") || app.includes("sampleListings")) {
 }
 
 const schema = await readFile("lib/schema.cjs", "utf8");
-if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligence.sql") || !schema.includes("004_phase1_foundation.sql")) {
+if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligence.sql") || !schema.includes("004_phase1_foundation.sql") || !schema.includes("005_phase1_column_repair.sql")) {
   throw new Error("Schema bootstrap must lock and include AI + Phase 1 foundation migrations");
 }
 
