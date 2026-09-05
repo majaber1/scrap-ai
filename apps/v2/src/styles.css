@@ -16,6 +16,10 @@ nav a, nav button, .link { border: 0; background: transparent; color: var(--ink)
 .choices { display: grid; gap: 12px; }
 .primary { background: var(--brand); color: #fff; border: 0; border-radius: 12px; min-height: 44px; font-weight: 800; }
 label { display: grid; gap: 6px; font-weight: 700; font-size: 14px; }
-input { padding: 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+input, textarea { padding: 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+textarea { min-height: 88px; }
+.muted { color: #4d675f; font-weight: 500; font-size: 14px; white-space: pre-wrap; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.danger { background: #992d2d; color: #fff; border: 0; border-radius: 12px; min-height: 44px; font-weight: 800; }
 .msg { color: #992d2d; }
 @media (max-width: 390px) { .top { align-items: flex-start; flex-direction: column; } }

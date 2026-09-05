@@ -33,6 +33,8 @@ function navAuth() {
   const labels: Record<string, string> = {
     overview: t().overview,
     analyze: t().analyze,
+    sell: t().sell,
+    intelligence: t().intelligence,
     activity: t().activity,
     account: t().account,
     sites: t().sites,
@@ -92,6 +94,8 @@ function workspace() {
   const gov = me?.organization.customerSegment === "GOVERNMENT";
   const showSites = company || gov;
   const title = me?.individualUx ? me.user.fullName : me?.organization.name;
+  const sell = hash === "sell" || (hash === "overview" && me?.individualUx);
+  const intel = hash === "intelligence" && company;
   return `
     <main class="shell">
       <h1>${title || t().workspace}</h1>
@@ -102,12 +106,39 @@ function workspace() {
           <button class="primary" type="submit">${t().createSite}</button>
         </form></section>` : ""}
       ${hash === "analyze" || hash === "overview" ? `<section class="card"><p>${t().analyzeHelp}</p><a class="primary link" href="/#analyze">${t().openAnalyze}</a></section>` : ""}
+      ${sell ? `<section class="card">
+        <h2>${t().sell}</h2>
+        <p>${t().sellHelp}</p>
+        <div class="row">
+          <a class="primary link" href="/#analyze">${t().openAnalyze}</a>
+          <button class="primary" type="button" data-act="prepare-draft">${t().prepareDraft}</button>
+        </div>
+        <p id="sellMsg" class="msg" hidden></p>
+        <div id="assistantBox" class="muted"></div>
+        <div id="draftBox"></div>
+        <div id="pricingBox" class="muted"></div>
+        <div id="matchBox" class="muted"></div>
+      </section>` : ""}
+      ${intel ? `<section class="card">
+        <h2>${t().intelligence}</h2>
+        <p class="muted">${t().sellHelp}</p>
+        <h3>${t().analyze}</h3>
+        <div id="analysisList">${t().noAnalyses}</div>
+        <h3>${t().sell}</h3>
+        <div id="intelDrafts">${t().noDrafts}</div>
+        <h3>${t().overview}</h3>
+        <div id="intelMaterials"></div>
+      </section>` : ""}
       ${hash === "account" ? `<section class="card"><p>${me?.user.email || ""}</p><p>${me?.organization.customerSegment || ""}</p></section>` : ""}
     </main>`;
 }
 
 function render() {
   root.innerHTML = (me ? navAuth() : navPublic()) + (me ? (me.needsOnboarding ? onboarding() : workspace()) : authForms());
+}
+
+function hashId() {
+  return location.hash.replace("#", "") || "overview";
 }
 
 async function refresh() {
@@ -118,7 +149,11 @@ async function refresh() {
     me = null;
   }
   render();
-  if (me && !me.needsOnboarding && (location.hash.replace("#", "") === "sites")) loadSites();
+  if (!me || me.needsOnboarding) return;
+  const hash = hashId();
+  if (hash === "sites") loadSites();
+  if (hash === "sell" || (hash === "overview" && me.individualUx)) loadSell();
+  if (hash === "intelligence") loadIntelligence();
 }
 
 async function loadSites() {
@@ -128,6 +163,85 @@ async function loadSites() {
   host.innerHTML = data.sites?.length
     ? data.sites.map((site: { name: string; city?: string }) => `<article><strong>${site.name}</strong><span>${site.city || ""}</span></article>`).join("")
     : t().emptySites;
+}
+
+function escapeText(value: unknown) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] || ch));
+}
+
+async function loadSell() {
+  const box = document.getElementById("draftBox");
+  if (!box) return;
+  const data = await api.drafts();
+  const drafts = data.drafts || [];
+  if (!drafts.length) {
+    box.innerHTML = `<p>${t().noDrafts}</p>`;
+    return;
+  }
+  const current = drafts[0];
+  const detail = await api.getDraft(current.id);
+  const draft = detail.draft;
+  const assistant = detail.assistant?.messages || [];
+  const assistantBox = document.getElementById("assistantBox");
+  if (assistantBox) {
+    assistantBox.innerHTML = `<h3>${t().assistant}</h3>` + assistant.map((msg: { ar: string; en: string }) => `<p>${escapeText(lang === "ar" ? msg.ar : msg.en)}</p>`).join("");
+  }
+  const pricing = detail.pricing;
+  const pricingBox = document.getElementById("pricingBox");
+  if (pricingBox) {
+    if (!pricing?.range) pricingBox.textContent = t().pricingNotice;
+    else {
+      const pct = pricing.confidence != null ? Math.round(Number(pricing.confidence) * 100) : null;
+      pricingBox.innerHTML = `<p>${escapeText(pricing.range.min)} - ${escapeText(pricing.range.max)} ${escapeText(pricing.currency)}/kg</p><p>${pct == null ? "" : pct + "%"}</p>`;
+    }
+  }
+  box.innerHTML = `
+    <form id="draftForm" data-id="${escapeText(draft.id)}">
+      <p><strong>${escapeText(lang === "ar" ? (detail.mapping?.labelAr || draft.title_ar) : (detail.mapping?.labelEn || draft.title_en))}</strong></p>
+      <p class="muted">${escapeText(draft.status)} · ${escapeText(draft.weight_status)}</p>
+      <label>${t().titleAr}<input name="titleAr" value="${escapeText(draft.title_ar || "")}"></label>
+      <label>${t().titleEn}<input name="titleEn" value="${escapeText(draft.title_en || "")}"></label>
+      <label>${t().city}<input name="city" value="${escapeText(draft.city || "")}" required></label>
+      <label>${t().weightKg}<input name="weightKg" type="number" min="0" step="0.01" value="${escapeText(draft.weight_kg || "")}"></label>
+      <p class="muted">${t().weightHint}</p>
+      <div class="row">
+        <button class="primary" type="submit">${t().saveEdits}</button>
+        <button class="primary" type="button" data-act="confirm-draft" data-id="${escapeText(draft.id)}">${t().confirmListing}</button>
+        <button class="danger" type="button" data-act="reject-draft" data-id="${escapeText(draft.id)}">${t().rejectDraft}</button>
+      </div>
+    </form>`;
+  const matchBox = document.getElementById("matchBox");
+  if (matchBox && draft.listing_id) {
+    const matched = await api.matching(draft.listing_id);
+    matchBox.innerHTML = `<h3>${t().matches}</h3>` + (matched.matches?.length
+      ? matched.matches.map((row: { score: number; matching_factors: string[] }) => `<p>${escapeText(row.score)} · ${escapeText((row.matching_factors || []).join(", "))}</p>`).join("")
+      : `<p>${escapeText(matched.notice || "")}</p>`);
+  }
+}
+
+async function loadIntelligence() {
+  const analysesHost = document.getElementById("analysisList");
+  const draftsHost = document.getElementById("intelDrafts");
+  const materialsHost = document.getElementById("intelMaterials");
+  if (!analysesHost || !draftsHost || !materialsHost) return;
+  const [analyses, drafts, materials] = await Promise.all([api.analyses(), api.drafts(), api.materials()]);
+  analysesHost.innerHTML = analyses.analyses?.length
+    ? analyses.analyses.map((row: { materialLabelAr?: string; materialLabelEn?: string; confidence?: number }) =>
+      `<article><strong>${escapeText(lang === "ar" ? row.materialLabelAr : row.materialLabelEn)}</strong> <span>${row.confidence == null ? "" : Math.round(Number(row.confidence) * 100) + "%"}</span></article>`).join("")
+    : t().noAnalyses;
+  draftsHost.innerHTML = drafts.drafts?.length
+    ? drafts.drafts.map((row: { title_ar?: string; title_en?: string; status: string }) =>
+      `<article><strong>${escapeText(lang === "ar" ? row.title_ar : row.title_en)}</strong> <span>${escapeText(row.status)}</span></article>`).join("")
+    : t().noDrafts;
+  materialsHost.innerHTML = (materials.materials || []).slice(0, 12).map((row: { label_ar: string; label_en: string }) =>
+    `<span>${escapeText(lang === "ar" ? row.label_ar : row.label_en)}</span>`).join(" · ");
+}
+
+function showSellError(error: unknown) {
+  const msg = document.getElementById("sellMsg");
+  if (!msg) return;
+  msg.hidden = false;
+  msg.textContent = error instanceof Error ? error.message : "error";
 }
 
 root.addEventListener("click", async (event) => {
@@ -147,6 +261,25 @@ root.addEventListener("click", async (event) => {
   if (seg) {
     await api.patchOrg({ customerSegment: seg });
     await refresh();
+    return;
+  }
+  try {
+    if (target.dataset.act === "prepare-draft") {
+      await api.createDraft({});
+      await loadSell();
+    }
+    if (target.dataset.act === "confirm-draft" && target.dataset.id) {
+      const form = document.getElementById("draftForm") as HTMLFormElement | null;
+      const city = form ? String(new FormData(form).get("city") || "") : "";
+      await api.confirmDraft(target.dataset.id, { city });
+      await loadSell();
+    }
+    if (target.dataset.act === "reject-draft" && target.dataset.id) {
+      await api.rejectDraft(target.dataset.id);
+      await loadSell();
+    }
+  } catch (error) {
+    showSellError(error);
   }
 });
 
@@ -163,15 +296,33 @@ root.addEventListener("submit", async (event) => {
       await loadSites();
       return;
     }
+    if (form.id === "draftForm") {
+      await api.patchDraft(String(form.dataset.id), {
+        titleAr: body.titleAr,
+        titleEn: body.titleEn,
+        city: body.city,
+        weightKg: body.weightKg === "" ? null : body.weightKg,
+      });
+      await loadSell();
+      return;
+    }
     await refresh();
   } catch (error) {
     if (msg) {
       msg.hidden = false;
       msg.textContent = error instanceof Error ? error.message : "error";
     }
+    showSellError(error);
   }
 });
 
-window.addEventListener("hashchange", () => { render(); if (me && location.hash.includes("sites")) loadSites(); });
+window.addEventListener("hashchange", () => {
+  if (!me) { render(); return; }
+  render();
+  const hash = hashId();
+  if (hash === "sites") loadSites();
+  if (hash === "sell" || (hash === "overview" && me.individualUx)) loadSell();
+  if (hash === "intelligence") loadIntelligence();
+});
 setLang("ar");
 refresh();
