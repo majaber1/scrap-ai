@@ -1,9 +1,9 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const fixture = join(root, "..", "tests", "fixtures", "copper.jpg");
+const fixture = join(root, "..", "tests", "fixtures", "PHASE0_TEST_FIXTURE_scrap_photo.jpg");
 
 const base = (process.env.PRODUCTION_URL || "https://scrap-ai.vercel.app").replace(/\/$/, "");
 const timeout = Number(process.env.SMOKE_TIMEOUT_MS || 180000);
@@ -35,27 +35,23 @@ function expect(value, message) {
   if (!value) throw new Error(message);
 }
 
-async function realCopperImage() {
-  if (existsSync(fixture)) {
-    const buf = readFileSync(fixture);
-    if (buf.length > 1000) return `data:image/jpeg;base64,${buf.toString("base64")}`;
-  }
-  const urls = [
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/NatCopper.jpg/640px-NatCopper.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Copper_sample.jpg/640px-Copper_sample.jpg",
-  ];
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { headers: { "User-Agent": "ScrapAI-Phase0-AI/1.0" } });
-      if (!r.ok) continue;
-      const buf = Buffer.from(await r.arrayBuffer());
-      if (buf.length < 1000) continue;
-      return `data:image/jpeg;base64,${buf.toString("base64")}`;
-    } catch {
-      /* try next */
-    }
-  }
-  throw new Error("Could not download a real copper photograph for E2E");
+function loadFixtureDataUrl() {
+  expect(existsSync(fixture), `Missing labeled test fixture: ${fixture}`);
+  const buf = readFileSync(fixture);
+  expect(buf.length > 2000, "Test fixture is too small to be a real photograph");
+  expect(buf[0] === 0xff && buf[1] === 0xd8, "Test fixture must be a JPEG photograph");
+  return `data:image/jpeg;base64,${buf.toString("base64")}`;
+}
+
+function assertVisualSchema(a) {
+  expect(a && typeof a === "object", "SCHEMA: analysis object");
+  expect(a.estimateKind === "VISUAL_ESTIMATE", "SCHEMA: estimateKind");
+  expect(a.labCertifiedPurity === false, "SCHEMA: labCertifiedPurity");
+  expect(a.physicalConfirmationRequired === true, "SCHEMA: physicalConfirmationRequired");
+  expect(typeof a.materialLabelEn === "string" && a.materialLabelEn.length > 0, "SCHEMA: materialLabelEn");
+  expect(typeof a.materialLabelAr === "string" && a.materialLabelAr.length > 0, "SCHEMA: materialLabelAr");
+  expect(typeof a.confidence === "number" && a.confidence >= 0 && a.confidence <= 1, "SCHEMA: confidence");
+  expect(typeof a.observationsEn === "string" || typeof a.observationsAr === "string", "SCHEMA: observations");
 }
 
 const health = await raw("/api/health");
@@ -86,29 +82,29 @@ const reg = await raw("/api/auth", {
 });
 expect(reg.r.ok && reg.cookie, `Register failed: ${reg.text.slice(0, 300)}`);
 
-const imageDataUrl = await realCopperImage();
+const imageDataUrl = loadFixtureDataUrl();
 const analyzed = await raw("/api/ai-analyze", {
   method: "POST",
   cookie: reg.cookie,
-  body: { imageDataUrl, city: "Riyadh" },
+  body: { imageDataUrl, city: "Riyadh", notes: "phase0-test-fixture-only" },
 });
 expect(analyzed.r.ok, `IMAGE ANALYSIS HTTP ${analyzed.r.status}: ${analyzed.text.slice(0, 800)}`);
 const a = analyzed.data?.analysis;
 expect(a?.id, "RESULT PERSISTED: missing analysis id");
-expect(a.estimateKind === "VISUAL_ESTIMATE", "SCHEMA: estimateKind");
-expect(a.labCertifiedPurity === false, "SCHEMA: labCertifiedPurity");
-expect(typeof a.materialLabelEn === "string" && a.materialLabelEn.length > 0, "SCHEMA: materialLabelEn");
-expect(typeof a.confidence === "number", "SCHEMA: confidence");
-expect(analyzed.data.provider && analyzed.data.provider !== "none", "REAL PROVIDER missing");
-expect(analyzed.data.model, "REAL MODEL missing");
+assertVisualSchema(a);
+expect(analyzed.data.provider && analyzed.data.provider !== "none" && analyzed.data.provider !== "mock", "REAL PROVIDER missing");
+expect(analyzed.data.model && !/mock|stub|demo/i.test(analyzed.data.model), "REAL MODEL missing");
 expect(typeof analyzed.data.fallbackUsed === "boolean", "fallbackUsed not logged");
-expect(!String(analyzed.data.notice || "").includes("demo"), "DEMO notice in production result");
-expect(!JSON.stringify(a).toLowerCase().includes("mock"), "mock payload detected");
+expect(typeof analyzed.data.latencyMs === "number" || analyzed.data.latencyMs === null, "latency not logged");
+const blob = JSON.stringify(analyzed.data).toLowerCase();
+expect(!blob.includes("\"mock\"") && !blob.includes("stub") && !blob.includes("fake live"), "mock/stub payload detected");
+expect(!String(analyzed.data.notice || "").toLowerCase().includes("demo"), "DEMO notice in production result");
 
 const listed = await raw("/api/ai-analyze", { cookie: reg.cookie });
 expect(listed.r.ok, `GET analyses failed: ${listed.text.slice(0, 300)}`);
 const saved = listed.data?.analyses?.find((row) => row.id === a.id);
 expect(saved, "RESULT SURVIVES REFRESH: id not returned by GET");
+assertVisualSchema(saved.result);
 expect(saved.provider === analyzed.data.provider, "persisted provider mismatch");
 expect(saved.model === analyzed.data.model, "persisted model mismatch");
 expect(typeof saved.fallbackUsed === "boolean", "persisted fallback not logged");
@@ -122,6 +118,19 @@ expect(login.r.ok && login.cookie, `Re-login failed: ${login.text.slice(0, 300)}
 const afterLogin = await raw("/api/ai-analyze", { cookie: login.cookie });
 expect(afterLogin.data?.analyses?.some((row) => row.id === a.id), "RESULT SURVIVES RE-LOGIN: row missing");
 
+const report = {
+  health: health.data,
+  email,
+  password,
+  analysisId: a.id,
+  provider: analyzed.data.provider,
+  model: analyzed.data.model,
+  fallbackUsed: analyzed.data.fallbackUsed,
+  latencyMs: analyzed.data.latencyMs,
+  fixture: "tests/fixtures/PHASE0_TEST_FIXTURE_scrap_photo.jpg",
+};
+writeFileSync(join(root, "..", "tests", "fixtures", ".phase0-last-run.json"), JSON.stringify(report, null, 2));
+
 console.log("Phase 0 AI production E2E: PASS");
 console.log("HEALTH: PASS");
 console.log("IMAGE ANALYSIS: PASS");
@@ -130,6 +139,7 @@ console.log("REAL MODEL:", analyzed.data.model);
 console.log("FALLBACK USED:", analyzed.data.fallbackUsed);
 console.log("LATENCY_MS:", analyzed.data.latencyMs);
 console.log("ANALYSIS_ID:", a.id);
+console.log("FIXTURE: tests/fixtures/PHASE0_TEST_FIXTURE_scrap_photo.jpg");
 console.log("PRODUCTION E2E: PASS");
 console.log("RESULT PERSISTED: PASS");
 console.log("RESULT SURVIVES REFRESH: PASS");
@@ -138,3 +148,4 @@ console.log("AUTH: PASS");
 if (expectedSha) console.log("GIT SHA MATCH: PASS", health.data.gitSha);
 else console.log("GIT SHA LIVE:", health.data.gitSha || "(not reported by runtime)");
 console.log("DEPLOYMENT:", health.data.deploymentId || "(none)");
+console.log("E2E_LOGIN_EMAIL:", email);

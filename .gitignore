@@ -7,3 +7,4 @@ node_modules/
 .env.*
 !.env.example
 .env*
+tests/fixtures/.phase0-last-run.json
