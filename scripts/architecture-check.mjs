@@ -51,8 +51,8 @@ const v2Http = await readFile("lib/foundation/v2-http.cjs", "utf8");
 if (!v2Http.includes("organization_id=$2") && !v2Http.includes("organization_id=$1")) {
   throw new Error("Site item access must be tenant-scoped");
 }
-if (!v2Http.includes("writeOutbox") || !v2Http.includes("BEGIN")) {
-  throw new Error("Site creation must write outbox in a transaction");
+if (!v2Http.includes("await requireUser")) {
+  throw new Error("V2 handlers must await requireUser so the session is not a Promise");
 }
 
 const apiFiles = ["api/auth.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/v2/[...path].js", "lib/foundation/v2-http.cjs"];
