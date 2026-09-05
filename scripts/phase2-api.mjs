@@ -93,7 +93,7 @@ expect(pricing.r.ok, `pricing: ${pricing.r.status} ${pricing.text.slice(0, 200)}
 expect(pricing.data.notice === "price_source_not_connected" || pricing.data.range, "pricing honesty");
 if (pricing.data.notice === "price_source_not_connected") expect(pricing.data.range === null, "no fake production price");
 
-const confirmed = await raw(`/api/v2/ai/drafts/${draftId}/confirm`, { method: "POST", cookie: seller.cookie, body: { city: "Riyadh" } });
+const confirmed = await raw(`/api/v2/ai/drafts/${draftId}`, { method: "POST", cookie: seller.cookie, body: { action: "confirm", city: "Riyadh" } });
 expect(confirmed.r.status === 201 && confirmed.data.listing?.id, `confirm: ${confirmed.text.slice(0, 400)}`);
 expect(confirmed.data.listing.indicative_value == null, "confirm must not invent price");
 expect(confirmed.data.draft.status === "PUBLISHED", "published after confirm");
