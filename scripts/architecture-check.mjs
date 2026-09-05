@@ -58,9 +58,12 @@ const v2Http = await readFile("lib/foundation/v2-http.cjs", "utf8");
 if (!v2Http.includes("organization_id=$2") && !v2Http.includes("organization_id=$1")) {
   throw new Error("Site item access must be tenant-scoped");
 }
-if (!v2Http.includes("await requireUser")) {
+  if (!v2Http.includes("await requireUser")) {
   throw new Error("V2 handlers must await requireUser so the session is not a Promise");
 }
+
+const v2Ai = await readFile("api/v2/ai/[...path].js", "utf8");
+if (!v2Ai.includes("handleV2")) throw new Error("Nested /api/v2/ai catch-all must reuse handleV2");
 
 const apiFiles = ["api/auth.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/v2/[...path].js", "lib/foundation/v2-http.cjs", "lib/modules/ai/phase2-http.cjs"];
 for (const file of apiFiles) {

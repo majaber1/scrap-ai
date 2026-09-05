@@ -1,3 +1,5 @@
+import { previewCookie, joinCookies } from "./preview-access.mjs";
+
 const base = (process.env.PRODUCTION_URL || process.env.PHASE1_URL || "https://scrap-ai.vercel.app").replace(/\/$/, "");
 const timeout = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 
@@ -5,9 +7,8 @@ async function raw(path, { method = "GET", body, cookie } = {}) {
   const c = new AbortController();
   const timer = setTimeout(() => c.abort(), timeout);
   try {
-    const headers = { "User-Agent": "ScrapAI-Phase1/1.0" };
+    const headers = { "User-Agent": "ScrapAI-Phase1/1.0", Cookie: joinCookies(await previewCookie(base), cookie) };
     if (body !== undefined) headers["Content-Type"] = "application/json";
-    if (cookie) headers.Cookie = cookie;
     const r = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: c.signal });
     const text = await r.text();
     let data = null;

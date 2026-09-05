@@ -1,7 +1,8 @@
+import { previewCookie, joinCookies } from "./preview-access.mjs";
 const base=(process.env.PRODUCTION_URL||"https://scrap-ai.vercel.app").replace(/\/$/,"");
 const timeout=Number(process.env.SMOKE_TIMEOUT_MS||15000);
 
-async function raw(path,{method="GET",body,cookie}={}){const c=new AbortController();const timer=setTimeout(()=>c.abort(),timeout);try{const headers={"User-Agent":"ScrapAI-Production-Smoke/2.0"};if(body!==undefined)headers["Content-Type"]="application/json";if(cookie)headers.Cookie=cookie;const r=await fetch(base+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:c.signal});const text=await r.text();let data=null;try{data=JSON.parse(text)}catch{}return{r,text,data,cookie:r.headers.get("set-cookie")?.split(";")[0]||cookie}}finally{clearTimeout(timer)}}
+async function raw(path,{method="GET",body,cookie}={}){const c=new AbortController();const timer=setTimeout(()=>c.abort(),timeout);try{const headers={"User-Agent":"ScrapAI-Production-Smoke/2.0",Cookie:joinCookies(await previewCookie(base),cookie)};if(body!==undefined)headers["Content-Type"]="application/json";const r=await fetch(base+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:c.signal});const text=await r.text();let data=null;try{data=JSON.parse(text)}catch{}return{r,text,data,cookie:r.headers.get("set-cookie")?.split(";")[0]||cookie}}finally{clearTimeout(timer)}}
 async function ok(path,options={}){const x=await raw(path,options);if(!x.r.ok)throw new Error(`${path} HTTP ${x.r.status}: ${x.text.slice(0,300)}`);return x}
 function expect(value,message){if(!value)throw new Error(message)}
 

@@ -1,6 +1,7 @@
 import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { previewCookie, joinCookies } from "./preview-access.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const fixture = join(root, "..", "tests", "fixtures", "PHASE0_TEST_FIXTURE_scrap_photo.jpg");
@@ -13,9 +14,8 @@ async function raw(path, { method = "GET", body, cookie } = {}) {
   const c = new AbortController();
   const timer = setTimeout(() => c.abort(), timeout);
   try {
-    const headers = { "User-Agent": "ScrapAI-Phase0-AI/1.0" };
+    const headers = { "User-Agent": "ScrapAI-Phase0-AI/1.0", Cookie: joinCookies(await previewCookie(base), cookie) };
     if (body !== undefined) headers["Content-Type"] = "application/json";
-    if (cookie) headers.Cookie = cookie;
     const r = await fetch(base + path, {
       method,
       headers,
