@@ -1,5 +1,4 @@
 {
-  "buildCommand": "npm run build:v2",
   "rewrites": [
     { "source": "/v2", "destination": "/v2/index.html" },
     { "source": "/v2/", "destination": "/v2/index.html" }
