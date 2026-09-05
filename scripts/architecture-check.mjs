@@ -40,8 +40,8 @@ if (app.includes("sampleBuyers") || app.includes("sampleListings")) {
 }
 
 const schema = await readFile("lib/schema.cjs", "utf8");
-if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligence.sql") || !schema.includes("004_phase1_foundation.sql") || !schema.includes("005_phase1_column_repair.sql")) {
-  throw new Error("Schema bootstrap must lock and include AI + Phase 1 foundation migrations");
+if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligence.sql") || !schema.includes("004_phase1_foundation.sql") || !schema.includes("005_phase1_column_repair.sql") || !schema.includes("42710")) {
+  throw new Error("Schema bootstrap must lock, include Phase 1 migrations, and tolerate duplicate trigger objects");
 }
 
 const v1Apis = ["api/auth.js", "api/listings.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/upload.js", "api/health.js"];

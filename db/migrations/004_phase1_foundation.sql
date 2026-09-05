@@ -297,9 +297,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS audit_events_no_update ON audit_events;
-CREATE TRIGGER audit_events_no_update
-  BEFORE UPDATE OR DELETE ON audit_events
-  FOR EACH ROW EXECUTE PROCEDURE audit_events_immutable();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'audit_events_no_update'
+  ) THEN
+    CREATE TRIGGER audit_events_no_update
+      BEFORE UPDATE OR DELETE ON audit_events
+      FOR EACH ROW EXECUTE PROCEDURE audit_events_immutable();
+  END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS domain_outbox (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
