@@ -98,8 +98,8 @@ expect(confirmed.r.status === 201 && confirmed.data.listing?.id, `confirm: ${con
 expect(confirmed.data.listing.indicative_value == null, "confirm must not invent price");
 expect(confirmed.data.draft.status === "PUBLISHED", "published after confirm");
 
-const matches = await raw(`/api/v2/match/${confirmed.data.listing.id}`, { cookie: seller.cookie });
-expect(matches.r.ok, "matching");
+const matches = await raw(`/api/v2/buyer-matches?listingId=${confirmed.data.listing.id}`, { cookie: seller.cookie });
+expect(matches.r.ok, `matching: ${matches.r.status} ${matches.text.slice(0, 200)}`);
 expect(Array.isArray(matches.data.matches), "matching array");
 if (matches.data.matches.length) {
   expect(matches.data.matches.some((row) => row.buyer_org_id === buyer.user.organization_id), "real buyer org scored");
