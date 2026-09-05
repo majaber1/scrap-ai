@@ -4,12 +4,12 @@
 
 ---
 
-## Current runtime (Phase 0 host)
+## Current runtime (Phase 0 host + Phase 1 `/v2` shell)
 
 ```
-Web (static, migrating to TS in Phase 1)
-  → BFF: api/*.js (Node serverless)
-    → identity, marketplace, platform, AI, upload, health
+Web (V1 static root) + /v2 TypeScript shell
+  → BFF: api/*.js including api/v2/* (Node serverless)
+    → identity, marketplace, platform, AI, upload, health, org/sites/RBAC
     → PostgreSQL
     → Object storage (Blob / R2)
     → AI provider adapters

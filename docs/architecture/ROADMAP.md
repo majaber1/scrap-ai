@@ -27,9 +27,13 @@ Each phase below uses: Objective, Business value, Actors, Scope, Out of scope, D
 
 ---
 
-## Phase 1 — V2 foundation (not started)
+## Phase 1 — V2 foundation (IN PROGRESS)
 
-Tenancy, RBAC, material taxonomy, sites, org categories, audit, outbox, TS frontend shell, migrate V1 users/listings. Exit: foundations live without destroying production data or the Phase 0 regression baseline.
+- **Status:** Implementation in progress. Not complete until the Phase 1 scoreboard is evidenced on production. Phase 2 is NOT started.
+- **Objective:** Tenancy, RBAC, sites, taxonomy, audit, outbox, TypeScript `/v2` shell, V1 compatibility, Phase 0 AI preserved.
+- **Out of scope:** Price intelligence, auto-filled sell listing, matching, auctions, RFQ, logistics, weighbridge, PSP, government procurement.
+- **Regression:** Preserve Phase 0 SHA conceptually as runtime baseline until a proven Phase 1 production SHA exists. `npm run test:ai` must remain PASS.
+- **UI:** `/v2` is additive. V1 root stays until equivalence is proven.
 
 ---
 

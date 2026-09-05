@@ -80,4 +80,4 @@ State from **webhook**, not the browser.
 
 ## V1 physical tables (today)
 
-`organizations`, `users`, `memberships`, `scrap_listings`, `offers`, `pickups`, `workflow_policies`, `organization_verifications`, `organization_documents`, `scrap_transactions`, `payment_records`, `disputes`, `ai_analyses`, plus Phase 0 `ai_provider_events`.
+`organizations`, `users`, `memberships`, `scrap_listings`, `offers`, `pickups`, `workflow_policies`, `organization_verifications`, `organization_documents`, `scrap_transactions`, `payment_records`, `disputes`, `ai_analyses`, plus Phase 0 `ai_provider_events`, plus Phase 1 `sites`, `permissions`, `roles`, `role_permissions`, `membership_roles`, `platform_roles`, `material_*`, `audit_events`, `domain_outbox`, `feature_flags`.

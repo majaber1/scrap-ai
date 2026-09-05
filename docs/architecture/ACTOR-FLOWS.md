@@ -54,4 +54,12 @@ Authenticated user → upload JPEG/PNG/WebP
   → GET /api/ai-analyze after refresh still returns the row
 ```
 
-No mock, no stub, no invented SAR.
+## Phase 1 implemented flow
+
+```
+Authenticated user → optional /v2 onboarding (INDIVIDUAL | COMPANY_FACTORY | GOVERNMENT)
+  → sites (company/government) persist in PostgreSQL
+  → RBAC permissions on mutations
+  → Analyze remains Phase 0 /#analyze → POST /api/ai-analyze
+  → taxonomy mapper foundation (no auto-publish)
+```

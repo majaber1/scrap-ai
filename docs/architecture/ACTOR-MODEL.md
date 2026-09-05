@@ -24,4 +24,4 @@ External: `Carrier`, `Driver`, `ContainerProvider`, `Inspector` (may be org type
 | Government OS | Public entity members | Governance, SoD, audit pack |
 | Public market | Anonymous browse | Real open listings only |
 
-V1: every logged-in user is effectively buyer+seller with a starting tab. That continues until Phase 1 RBAC.
+V1 dual buy/sell remains for owners. Phase 1 adds normalized `membership_roles` and `/v2` segment-aware navigation. Government procurement UI is not implemented.
