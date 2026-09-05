@@ -40,9 +40,16 @@ if (app.includes("sampleBuyers") || app.includes("sampleListings")) {
 }
 
 const schema = await readFile("lib/schema.cjs", "utf8");
-if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligence.sql") || !schema.includes("004_phase1_foundation.sql") || !schema.includes("005_phase1_column_repair.sql") || !schema.includes("42710")) {
-  throw new Error("Schema bootstrap must lock, include Phase 1 migrations, and tolerate duplicate trigger objects");
+if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligence.sql") || !schema.includes("004_phase1_foundation.sql") || !schema.includes("005_phase1_column_repair.sql") || !schema.includes("006_phase2_intelligence.sql") || !schema.includes("42710")) {
+  throw new Error("Schema bootstrap must lock, include Phase 1/2 migrations, and tolerate duplicate trigger objects");
 }
+
+const phase2Http = await readFile("lib/modules/ai/phase2-http.cjs", "utf8");
+if (!phase2Http.includes("autoPublish: false")) throw new Error("Phase 2 drafts must not auto-publish");
+if (!phase2Http.includes("indicative_value") || !phase2Http.includes("NULL")) throw new Error("Confirmed listings must not invent indicative value from AI");
+const pricing = await readFile("lib/modules/pricing/signals.cjs", "utf8");
+if (!pricing.includes("price_source_not_connected")) throw new Error("Pricing foundation must stay honest when no signals exist");
+if (phase2Http.includes("INSERT INTO market_price_signals")) throw new Error("Phase 2 APIs must not seed fake market prices");
 
 const v1Apis = ["api/auth.js", "api/listings.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/upload.js", "api/health.js"];
 for (const file of v1Apis) await readFile(file, "utf8");
@@ -55,7 +62,7 @@ if (!v2Http.includes("await requireUser")) {
   throw new Error("V2 handlers must await requireUser so the session is not a Promise");
 }
 
-const apiFiles = ["api/auth.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/v2/[...path].js", "lib/foundation/v2-http.cjs"];
+const apiFiles = ["api/auth.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/v2/[...path].js", "lib/foundation/v2-http.cjs", "lib/modules/ai/phase2-http.cjs"];
 for (const file of apiFiles) {
   const text = await readFile(file, "utf8");
   if (/UPDATE\s+audit_events/i.test(text) || /DELETE\s+FROM\s+audit_events/i.test(text)) {

@@ -41,6 +41,7 @@ module.exports = async function(req,res){
       storage,
       storageProvider:provider,
       v2Shell: true,
+      phase2Intelligence: true,
       ...deploy
     });
   } catch(e) {

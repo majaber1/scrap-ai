@@ -12,6 +12,8 @@ expect(parseCustomerSegment("individual") === "INDIVIDUAL", "segment parse");
 expect(parseCustomerSegment("factory") === null, "reject unknown segment");
 expect(isConfirmableSegment("UNKNOWN") === false, "unknown is not confirmable");
 expect(navigationForSegment("INDIVIDUAL").includes("analyze"), "individual analyze");
+expect(navigationForSegment("INDIVIDUAL").includes("sell"), "individual sell");
+expect(navigationForSegment("COMPANY_FACTORY").includes("intelligence"), "company intelligence");
 expect(!navigationForSegment("GOVERNMENT").includes("analyze"), "government has no fake auctions and no analyze module requirement");
 expect(individualUx("INDIVIDUAL") === true, "individual ux");
 expect(individualUx("COMPANY_FACTORY") === false, "company ux");

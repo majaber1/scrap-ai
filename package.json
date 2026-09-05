@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "npx --yes serve . -l 8081",
     "build:v2": "node scripts/build-v2.mjs",
-    "test": "node scripts/check.mjs && node scripts/phase1-unit.mjs",
+    "test": "node scripts/check.mjs && node scripts/phase1-unit.mjs && node scripts/phase2-unit.mjs",
     "test:arch": "node scripts/architecture-check.mjs",
     "test:prod": "node scripts/production-smoke.mjs",
     "test:ai": "node scripts/phase0-ai-e2e.mjs",
@@ -14,6 +14,8 @@
     "test:phase1": "node scripts/phase1-unit.mjs && node scripts/architecture-check.mjs",
     "test:phase1-api": "node scripts/phase1-api.mjs",
     "test:phase1-browser": "node scripts/phase1-browser.mjs",
+    "test:phase2": "node scripts/phase2-unit.mjs && node scripts/architecture-check.mjs",
+    "test:phase2-api": "node scripts/phase2-api.mjs",
     "migrate": "node scripts/migrate.cjs"
   },
   "dependencies": {
