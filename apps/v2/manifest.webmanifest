@@ -1,0 +1,9 @@
+{
+  "name": "سكراب AI",
+  "short_name": "Scrap AI",
+  "start_url": "/v2/",
+  "display": "standalone",
+  "background_color": "#f4f7f4",
+  "theme_color": "#0f6f57",
+  "lang": "ar"
+}
