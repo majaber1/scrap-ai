@@ -1,1 +1,21 @@
-{"name":"scrap-ai","version":"1.0.0","private":true,"description":"Saudi-first scrap valuation and transaction platform","scripts":{"serve":"npx --yes serve . -l 8081","test":"node scripts/check.mjs","test:prod":"node scripts/production-smoke.mjs","migrate":"node scripts/migrate.cjs"},"dependencies":{"@vercel/blob":"^2.8.0","pg":"^8.13.1"},"license":"MIT"}
+{
+  "name": "scrap-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Saudi circular materials operating system",
+  "scripts": {
+    "serve": "npx --yes serve . -l 8081",
+    "test": "node scripts/check.mjs",
+    "test:arch": "node scripts/architecture-check.mjs",
+    "test:prod": "node scripts/production-smoke.mjs",
+    "test:ai": "node scripts/phase0-ai-e2e.mjs",
+    "test:ai-local": "node scripts/phase0-local-ai.mjs",
+    "migrate": "node scripts/migrate.cjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0",
+    "pg": "^8.13.1",
+    "zod": "^3.24.2"
+  },
+  "license": "MIT"
+}

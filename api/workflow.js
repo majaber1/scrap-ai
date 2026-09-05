@@ -1,7 +1,6 @@
 const { pool, requireSession, json } = require("../lib/server.cjs");
 const { ensureSchema } = require("../lib/schema.cjs");
-
-const MATERIALS = new Set(["mixed", "copper", "aluminum", "steel", "ewaste", "battery"]);
+const { normalizeMaterial } = require("../lib/materials.cjs");
 const UNITS = new Set(["kg", "ton", "piece"]);
 
 function text(value, max) {
@@ -47,13 +46,12 @@ module.exports = async function handler(req, res) {
 
     if (action === "createListing") {
       const title = text(body.title, 120);
-      const material = text(body.material, 32) || "mixed";
+      const material = normalizeMaterial(body.material);
       const city = text(body.city, 80);
       const unit = UNITS.has(body.unit) ? body.unit : "kg";
       const quantity = body.quantity === null || body.quantity === "" || body.quantity === undefined ? null : Number(body.quantity);
       const indicativeValue = body.indicativeValue === null || body.indicativeValue === "" || body.indicativeValue === undefined ? null : Number(body.indicativeValue);
       if (title.length < 2) return json(res, 400, { error: "title_required" });
-      if (!MATERIALS.has(material)) return json(res, 400, { error: "invalid_material" });
       if (city.length < 2) return json(res, 400, { error: "city_required" });
       if (quantity !== null && (!Number.isFinite(quantity) || quantity < 0)) return json(res, 400, { error: "invalid_quantity" });
       if (indicativeValue !== null && (!Number.isFinite(indicativeValue) || indicativeValue < 0)) return json(res, 400, { error: "invalid_value" });

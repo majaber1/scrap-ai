@@ -53,8 +53,8 @@ flowchart TD
 | Phase | Outcome | Status |
 | --- | --- | --- |
 | 0 Foundation | Schema in Git, env template, listing validation, one-offer lock, public `/api/listings` | Done |
-| 1 One surface | Photo-first sell, analyze → publish, live market page, no “demo market” | In progress |
-| 2 Trust | Review verification, evidence on deal, notify | Not started |
+| 1 One surface | Photo-first sell, analyze → publish, live market, Vercel Blob photos | Done |
+| 2 Trust | Review verification, evidence on deal, notify | Next |
 | 3 Payments | Licensed PSP webhooks then `settled` | Blocked on provider |
 | 4 Extend | Fleet, live rates, auctions, global B2B | Explicitly later |
 
@@ -66,7 +66,7 @@ flowchart TD
 2. Analyze page writes a listing draft → account sell tab — done
 3. In-page Account workspace (not a floating overlay) — done
 4. Public market on `/api/listings` — done
-5. Listing photo upload via R2 when configured; public read via `/api/media` — done (needs R2 env)
+5. Listing photo upload via Vercel Blob — done (production `storage: true`)
 6. Local migrate script — done
 
 ---

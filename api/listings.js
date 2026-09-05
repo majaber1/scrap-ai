@@ -1,5 +1,6 @@
 const { pool, json } = require("../lib/server.cjs");
 const { ensureSchema } = require("../lib/schema.cjs");
+const { normalizeMaterial } = require("../lib/materials.cjs");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return json(res, 405, { error: "method_not_allowed" });
@@ -16,6 +17,7 @@ module.exports = async function handler(req, res) {
     );
     const listings = result.rows.map((listing) => ({
       ...listing,
+      material: normalizeMaterial(listing.material),
       image: listing.image_url
         ? (String(listing.image_url).startsWith("http") ? listing.image_url : `/api/media?listing=${listing.id}`)
         : null,

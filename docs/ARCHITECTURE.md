@@ -1,7 +1,9 @@
-# Scrap AI — Locked Architecture
+# Scrap AI — Locked Architecture (V1 historical record)
 
-**Status: LOCKED** as of 2026-09-05.  
-Do not reopen stack, domain model, AI boundary, or information architecture unless a licensed payment provider or a legal requirement forces it.
+**Superseded product boundary:** 2026-09-05 owner mandate. Canonical V2 baseline is `docs/architecture/ADR-001-SCRAP-AI-V2.md`. This file is **not rewritten**; it documents the marketplace-only V1 that ADR-001 replaces.
+
+**Status: LOCKED (V1)** as of 2026-09-05.  
+V1 stack notes below remain historically accurate for the marketplace slice. Do not treat this file as the V2 OS architecture.
 
 Delivery path: **local → GitHub → Vercel**. Runtime truth is `GET /api/health` on production.
 
@@ -60,7 +62,7 @@ We start from where the best products already ended, then keep only what works f
 6. Transaction stages through **final_weight_confirmed**.
 7. Org verification submit (manual review).
 8. Private evidence upload when R2 is configured.
-9. Indicative AI image analysis when OpenAI is configured.
+9. Indicative AI image analysis when Gemini, Groq, or OpenAI is configured.
 10. Health endpoint, signed sessions, PostgreSQL durability.
 
 ### Out until a later phase (do not build)

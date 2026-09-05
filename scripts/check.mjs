@@ -1,6 +1,6 @@
 import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
-const required=["index.html","styles.css","hardening.css","simple-market.css","app.js","production-client.js","package.json",".env.example","docs/ARCHITECTURE.md","docs/IMPLEMENTATION.md","docs/PRODUCT_AUDIT.md","docs/RELEASE_REPORT.md","docs/FINAL_QA_QC_REPORT.md","assets/logo-mark.svg","assets/logo-lockup.svg","assets/scrap-hero.svg","assets/scrap-copper.svg","assets/scrap-steel.svg","assets/scrap-electronics.svg","db/migrations/001_core.sql","db/migrations/002_operations.sql","lib/schema.cjs","lib/r2.cjs","lib/storage.cjs","api/listings.js","api/media.js","vercel.json","scripts/migrate.cjs"];
+const required=["index.html","styles.css","hardening.css","simple-market.css","app.js","production-client.js","package.json",".env.example","docs/ARCHITECTURE.md","docs/IMPLEMENTATION.md","docs/architecture/ADR-001-SCRAP-AI-V2.md","docs/architecture/SCRAP_AI_V2_CURRENT_STATE_AUDIT.md","assets/logo-mark.svg","assets/logo-lockup.svg","assets/scrap-hero.svg","assets/scrap-copper.svg","assets/scrap-steel.svg","assets/scrap-electronics.svg","db/migrations/001_core.sql","db/migrations/002_operations.sql","db/migrations/003_ai_intelligence.sql","lib/schema.cjs","lib/r2.cjs","lib/storage.cjs","lib/materials.cjs","lib/ai.cjs","lib/intelligence/engine.cjs","api/listings.js","api/media.js","api/ai-analyze.js","api/health.js","vercel.json","scripts/migrate.cjs","scripts/architecture-check.mjs"];
 for (const file of required) await access(file);
 const html=await readFile("index.html","utf8");
 for(const marker of ["id=\"mainContent\"","id=\"home\"","id=\"analyze\"","id=\"marketplace\"","id=\"account\"","id=\"accountWorkspace\"","id=\"dashboard\"","id=\"result\"","id=\"connectionState\"","id=\"menuBtn\"","simple-market.css","scrap-hero.svg","openScrapAccount","production-client.js"]) if(!html.includes(marker)) throw new Error(`Missing ${marker}`);
@@ -23,5 +23,7 @@ if(!schema.includes("001_core.sql")||!schema.includes("ensureSchema")) throw new
 const workflow=await readFile("api/workflow.js","utf8");
 if(!workflow.includes("status = 'declined'")||!workflow.includes("offer_already_submitted")) throw new Error("Offer integrity rules are missing");
 if(!workflow.includes("city_required")) throw new Error("Listing validation is missing");
-for(const file of ["app.js","production-client.js","api/workflow.js","api/listings.js","api/upload.js","api/media.js","lib/schema.cjs","lib/r2.cjs","lib/storage.cjs"]){const syntax=spawnSync(process.execPath,["--check",file],{stdio:"inherit"});if(syntax.status!==0)process.exit(syntax.status??1);}
+for(const file of ["app.js","production-client.js","api/workflow.js","api/listings.js","api/upload.js","api/media.js","api/ai-analyze.js","api/health.js","lib/schema.cjs","lib/r2.cjs","lib/storage.cjs","lib/materials.cjs","lib/ai.cjs","lib/intelligence/schema.cjs","lib/intelligence/circuit.cjs","lib/intelligence/providers.cjs","lib/intelligence/engine.cjs"]){const syntax=spawnSync(process.execPath,["--check",file],{stdio:"inherit"});if(syntax.status!==0)process.exit(syntax.status??1);}
+const arch=spawnSync(process.execPath,["scripts/architecture-check.mjs"],{stdio:"inherit"});
+if(arch.status!==0)process.exit(arch.status??1);
 console.log("Scrap AI role-safe buyer/seller release checks passed.");

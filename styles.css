@@ -32,8 +32,8 @@ body {
   margin: 0;
   background: var(--canvas);
   color: var(--ink);
-  font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif;
-  line-height: 1.6;
+  font-family: "IBM Plex Sans Arabic", Tajawal, "Segoe UI", Tahoma, Arial, sans-serif;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 button, input, select { font: inherit; }

@@ -1,23 +1,23 @@
 # Scrap AI
 
-Saudi-first bilingual scrap marketplace: **seller lists scrap → buyer submits an offer → seller accepts → AI/verification assists inspection, weight, pickup and deal completion**.
+Saudi circular-materials platform (V2): **AI identification, market intelligence with provenance, marketplace, then logistics / containers / weighbridge / settlement** as bounded contexts. The V1 seller→offer→accept loop remains live during migration.
 
-The product is intentionally simple. AI is an assistant to the transaction, not the marketplace itself.
+Canonical architecture: `docs/architecture/ADR-001-SCRAP-AI-V2.md`. V1 marketplace lock file is historical: `docs/ARCHITECTURE.md`.
 
 ## Operational source of truth
 
-Last reviewed: **2026-09-05**. Architecture is locked in `docs/ARCHITECTURE.md`.
+Last reviewed: **2026-09-05**.
 
 | Layer | Canonical source | Current state |
 | --- | --- | --- |
-| Code | this repository | Static bilingual frontend + serverless `/api/*` + SQL migrations |
+| Code | this repository | Static bilingual frontend + serverless `/api/*` + SQL migrations (TS shell in Phase 1) |
 | Production | `https://scrap-ai.vercel.app` | Vercel production |
 | Health | `GET /api/health` | Reports DB/session plus AI/storage readiness |
-| Database | `DATABASE_URL` + `db/migrations/` | PostgreSQL accounts, listings, offers, pickups, transactions |
+| Database | `DATABASE_URL` + `db/migrations/` | PostgreSQL accounts, listings, offers, pickups, transactions, AI analyses |
 | Sessions | `SESSION_SECRET` | Signed HttpOnly production sessions |
-| AI | `OPENAI_API_KEY` + optional `OPENAI_MODEL` | Indicative image analysis only |
-| Object storage | Cloudflare R2 | Private evidence when configured |
-| Architecture | `docs/ARCHITECTURE.md` | **Locked** product, AI, stack, and phases |
+| AI | Provider registry (`GEMINI_API_KEY`, `GROQ_API_KEY`, optional `OPENAI_API_KEY`) | Visual estimate only — not a lab certificate or live SAR price |
+| Object storage | Vercel Blob (preferred) or Cloudflare R2 | Listing photos / evidence |
+| Architecture | `docs/architecture/` | ADR-001 V2 baseline |
 
 **Runtime health and live journey tests override prose.** Historical QA reports remain evidence only for the date they were recorded.
 
@@ -98,6 +98,10 @@ SESSION_SECRET
 AI analysis:
 
 ```text
+GEMINI_API_KEY
+GEMINI_MODEL
+GROQ_API_KEY
+GROQ_MODEL
 OPENAI_API_KEY
 OPENAI_MODEL
 ```
