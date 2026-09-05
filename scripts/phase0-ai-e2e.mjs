@@ -1,5 +1,12 @@
+import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const root = dirname(fileURLToPath(import.meta.url));
+const fixture = join(root, "..", "tests", "fixtures", "copper.jpg");
+
 const base = (process.env.PRODUCTION_URL || "https://scrap-ai.vercel.app").replace(/\/$/, "");
-const timeout = Number(process.env.SMOKE_TIMEOUT_MS || 90000);
+const timeout = Number(process.env.SMOKE_TIMEOUT_MS || 180000);
 const expectedSha = (process.env.EXPECTED_GIT_SHA || "").trim();
 
 async function raw(path, { method = "GET", body, cookie } = {}) {
@@ -29,6 +36,10 @@ function expect(value, message) {
 }
 
 async function realCopperImage() {
+  if (existsSync(fixture)) {
+    const buf = readFileSync(fixture);
+    if (buf.length > 1000) return `data:image/jpeg;base64,${buf.toString("base64")}`;
+  }
   const urls = [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/NatCopper.jpg/640px-NatCopper.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Copper_sample.jpg/640px-Copper_sample.jpg",
