@@ -38,6 +38,6 @@ export const api = {
   patchDraft: (id: string, body: Record<string, unknown>) => jsonReq(`/api/v2/ai/drafts/${id}`, "PATCH", body),
   confirmDraft: (id: string, body: Record<string, unknown>) => jsonReq(`/api/v2/ai/drafts/${id}/confirm`, "POST", body),
   rejectDraft: (id: string) => jsonReq(`/api/v2/ai/drafts/${id}/reject`, "POST", {}),
-  pricing: (materialId: string) => fetch(`/api/v2/pricing/signals?materialId=${encodeURIComponent(materialId)}`, { credentials: "include" }).then(parse),
-  matching: (listingId: string) => fetch(`/api/v2/matching/${listingId}`, { credentials: "include" }).then(parse),
+  pricing: (materialId: string) => fetch(`/api/v2/price-signals?materialId=${encodeURIComponent(materialId)}`, { credentials: "include" }).then(parse),
+  matching: (listingId: string) => fetch(`/api/v2/match/${listingId}`, { credentials: "include" }).then(parse),
 };

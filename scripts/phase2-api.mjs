@@ -88,8 +88,8 @@ const assistant = await raw(`/api/v2/ai/assistant?analysisId=${analysisId}`, { c
 expect(assistant.r.ok && assistant.data.assistant?.autoPublish === false, "assistant");
 expect(assistant.data.mapping?.materialId, "material mapping");
 
-const pricing = await raw(`/api/v2/pricing/signals?materialId=${created.data.draft.material_id || ""}`, { cookie: seller.cookie });
-expect(pricing.r.ok, "pricing");
+const pricing = await raw(`/api/v2/price-signals?materialId=${created.data.draft.material_id || ""}`, { cookie: seller.cookie });
+expect(pricing.r.ok, `pricing: ${pricing.r.status} ${pricing.text.slice(0, 200)}`);
 expect(pricing.data.notice === "price_source_not_connected" || pricing.data.range, "pricing honesty");
 if (pricing.data.notice === "price_source_not_connected") expect(pricing.data.range === null, "no fake production price");
 
@@ -98,7 +98,7 @@ expect(confirmed.r.status === 201 && confirmed.data.listing?.id, `confirm: ${con
 expect(confirmed.data.listing.indicative_value == null, "confirm must not invent price");
 expect(confirmed.data.draft.status === "PUBLISHED", "published after confirm");
 
-const matches = await raw(`/api/v2/matching/${confirmed.data.listing.id}`, { cookie: seller.cookie });
+const matches = await raw(`/api/v2/match/${confirmed.data.listing.id}`, { cookie: seller.cookie });
 expect(matches.r.ok, "matching");
 expect(Array.isArray(matches.data.matches), "matching array");
 if (matches.data.matches.length) {
