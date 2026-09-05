@@ -1,7 +1,5 @@
 import { draftFromAnalysis, parseDraftPatch } from "../lib/modules/listings/drafts.cjs";
 import { buildAssistant } from "../lib/modules/ai/assistant.cjs";
-import { explainRange } from "../lib/modules/pricing/signals.cjs";
-import { scoreBuyer } from "../lib/modules/matching/engine.cjs";
 import { diffFeedback } from "../lib/modules/feedback/events.cjs";
 import { navigationForSegment } from "../lib/foundation/segments.cjs";
 
@@ -29,18 +27,8 @@ expect(assistant.messages.some((m) => /weight/i.test(m.en)), "assistant asks for
 expect(parseDraftPatch({ weightKg: -1 }).error === "invalid_weight", "reject invalid weight");
 expect(parseDraftPatch({ titleEn: "Insulated Copper Cable" }).value.title_en === "Insulated Copper Cable", "seller edit");
 
-const emptyPrice = explainRange([]);
-expect(emptyPrice.range === null, "no fabricated range");
-expect(emptyPrice.notice === "price_source_not_connected", "honest pricing notice");
-const livePrice = explainRange([{ price_min: 24, price_max: 27, currency: "SAR", confidence: 0.78, source_type: "INTERNAL_TRANSACTION", region: "Riyadh" }]);
-expect(livePrice.range.min === 24 && livePrice.range.max === 27, "range from real signals only");
-
-const scored = scoreBuyer({ hasBuyerRole: true, sameCity: true, sameMaterialOffer: true });
-expect(scored.score === 1, "matching score caps at 1");
-expect(scored.factors.includes("buyer_capability"), "matching reason");
-
 const events = diffFeedback({ title_en: "Copper Cable", title_ar: "كابل", city: null, weight_kg: null, description_ar: "a", condition_text: "used" }, { title_en: "Insulated Copper Cable", title_ar: "كابل", city: "Riyadh", weight_kg: 10, description_ar: "a", condition_text: "used" });
 expect(events.some((e) => e.fieldName === "titleEn" && e.humanValue === "Insulated Copper Cable"), "feedback stores seller correction");
 expect(events.every((e) => e.source === "SELLER"), "feedback source");
 
-console.log("Phase 2 unit tests: PASS");
+console.log("Phase 2A Slice 1 unit tests: PASS");

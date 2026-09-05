@@ -12,7 +12,7 @@ async function raw(path, { method = "GET", body, cookie } = {}) {
   const c = new AbortController();
   const timer = setTimeout(() => c.abort(), timeout);
   try {
-    const headers = { "User-Agent": "ScrapAI-Phase2/1.0", Cookie: joinCookies(await previewCookie(base), cookie) };
+    const headers = { "User-Agent": "ScrapAI-Phase2Slice1/1.0", Cookie: joinCookies(await previewCookie(base), cookie) };
     if (body !== undefined) headers["Content-Type"] = "application/json";
     const r = await fetch(base + path, {
       method,
@@ -47,9 +47,7 @@ async function register(label, kind = "both") {
 
 const health = await raw("/api/health");
 expect(health.r.ok && health.data?.status === "ok", "health");
-expect(health.data.phase2Intelligence === true, "phase2 health flag");
 
-const buyer = await register("buyer", "buyer");
 const seller = await register("seller", "seller");
 await raw("/api/v2/organization", { method: "PATCH", cookie: seller.cookie, body: { customerSegment: "INDIVIDUAL" } });
 
@@ -58,7 +56,7 @@ const imageDataUrl = `data:image/jpeg;base64,${readFileSync(fixture).toString("b
 const analyzed = await raw("/api/ai-analyze", {
   method: "POST",
   cookie: seller.cookie,
-  body: { imageDataUrl, city: "Riyadh", notes: "phase2-draft-fixture" },
+  body: { imageDataUrl, city: "Riyadh", notes: "phase2-slice1-fixture" },
 });
 expect(analyzed.r.ok && analyzed.data?.analysis?.id, `analyze: ${analyzed.text.slice(0, 400)}`);
 const analysisId = analyzed.data.analysis.id;
@@ -83,28 +81,54 @@ const patched = await raw(`/api/v2/ai/drafts/${draftId}`, {
 });
 expect(patched.r.ok && patched.data.draft.weight_status === "SELLER_PROVIDED", `patch: ${patched.text.slice(0, 300)}`);
 expect(Number(patched.data.feedbackEvents) >= 1, "feedback events stored");
+expect(Number(patched.data.draft.weight_kg) === 25, "seller weight persisted");
 
-const assistant = await raw(`/api/v2/ai/assistant?analysisId=${analysisId}`, { cookie: seller.cookie });
-expect(assistant.r.ok && assistant.data.assistant?.autoPublish === false, "assistant");
-expect(assistant.data.mapping?.materialId, "material mapping");
+const refreshed = await raw(`/api/v2/ai/drafts/${draftId}`, { cookie: seller.cookie });
+expect(refreshed.r.ok, `refresh get: ${refreshed.text.slice(0, 200)}`);
+expect(refreshed.data.draft.title_en === "Insulated Copper Cable for Sale", "persistence after refresh title");
+expect(Number(refreshed.data.draft.weight_kg) === 25, "persistence after refresh weight");
+expect(refreshed.data.draft.status === "REVIEW_REQUIRED", "refresh keeps review required");
+expect(refreshed.data.pricing == null, "slice 1 get draft must not attach pricing");
 
-const pricing = await raw(`/api/v2/price-signals?materialId=${created.data.draft.material_id || ""}`, { cookie: seller.cookie });
-expect(pricing.r.ok, `pricing: ${pricing.r.status} ${pricing.text.slice(0, 200)}`);
-expect(pricing.data.notice === "price_source_not_connected" || pricing.data.range, "pricing honesty");
-if (pricing.data.notice === "price_source_not_connected") expect(pricing.data.range === null, "no fake production price");
+const relogin = await raw("/api/auth", { method: "POST", body: { action: "login", email: seller.email, password: seller.password } });
+expect(relogin.r.ok && relogin.cookie, "relogin after draft edit");
+const afterLogin = await raw(`/api/v2/ai/drafts/${draftId}`, { cookie: relogin.cookie });
+expect(afterLogin.data.draft.city === "Riyadh" && Number(afterLogin.data.draft.weight_kg) === 25, "draft survives session refresh");
 
-const confirmed = await raw(`/api/v2/ai/drafts/${draftId}`, { method: "POST", cookie: seller.cookie, body: { action: "confirm", city: "Riyadh" } });
+const clearedCity = await raw(`/api/v2/ai/drafts/${draftId}`, {
+  method: "PATCH",
+  cookie: seller.cookie,
+  body: { city: "" },
+});
+expect(clearedCity.r.ok && clearedCity.data.draft.city == null, `clear city: ${clearedCity.text.slice(0, 200)}`);
+const missingCity = await raw(`/api/v2/ai/drafts/${draftId}/confirm`, { method: "POST", cookie: seller.cookie, body: {} });
+expect(missingCity.r.status === 400 && missingCity.data?.error === "city_required", `city required: ${missingCity.text.slice(0, 200)}`);
+const restoreCity = await raw(`/api/v2/ai/drafts/${draftId}`, {
+  method: "PATCH",
+  cookie: seller.cookie,
+  body: { city: "Riyadh", weightKg: 25 },
+});
+expect(restoreCity.r.ok, "restore city before confirm");
+
+const confirmed = await raw(`/api/v2/ai/drafts/${draftId}/confirm`, { method: "POST", cookie: seller.cookie, body: { city: "Riyadh" } });
 expect(confirmed.r.status === 201 && confirmed.data.listing?.id, `confirm: ${confirmed.text.slice(0, 400)}`);
 expect(confirmed.data.listing.indicative_value == null, "confirm must not invent price");
 expect(confirmed.data.draft.status === "PUBLISHED", "published after confirm");
+expect(confirmed.data.draft.listing_id === confirmed.data.listing.id, "draft points at listing");
 
-const matches = await raw(`/api/v2/buyer-matches?listingId=${confirmed.data.listing.id}`, { cookie: seller.cookie });
-expect(matches.r.ok, `matching: ${matches.r.status} ${matches.text.slice(0, 200)}`);
-expect(Array.isArray(matches.data.matches), "matching array");
-if (matches.data.matches.length) {
-  expect(matches.data.matches.some((row) => row.buyer_org_id === buyer.user.organization_id), "real buyer org scored");
-  expect(matches.data.matches.every((row) => typeof Number(row.score) === "number"), "match score");
-}
+const afterConfirm = await raw(`/api/v2/ai/drafts/${draftId}`, { cookie: seller.cookie });
+expect(afterConfirm.data.draft.status === "PUBLISHED" && afterConfirm.data.draft.listing_id, "published draft persists");
+
+const rejectSource = await raw("/api/v2/ai/drafts", { method: "POST", cookie: seller.cookie, body: { analysisId } });
+expect(rejectSource.r.status === 201, "second draft for reject");
+const rejectId = rejectSource.data.draft.id;
+const rejected = await raw(`/api/v2/ai/drafts/${rejectId}/reject`, { method: "POST", cookie: seller.cookie, body: {} });
+expect(rejected.r.ok && rejected.data.draft.status === "REJECTED", `reject: ${rejected.text.slice(0, 300)}`);
+expect(rejected.data.listing == null, "reject must not create listing");
+const rejectPersist = await raw(`/api/v2/ai/drafts/${rejectId}`, { cookie: seller.cookie });
+expect(rejectPersist.data.draft.status === "REJECTED", "rejected status persists");
+const rejectConfirm = await raw(`/api/v2/ai/drafts/${rejectId}/confirm`, { method: "POST", cookie: seller.cookie, body: { city: "Riyadh" } });
+expect(rejectConfirm.r.status === 409, `rejected draft cannot confirm, got ${rejectConfirm.r.status}`);
 
 const viewerInvite = await raw("/api/v2/members", { method: "POST", cookie: seller.cookie, body: { email: other.user.email, roles: ["VIEWER"] } });
 expect(viewerInvite.r.ok, `invite viewer: ${viewerInvite.text.slice(0, 200)}`);
@@ -112,10 +136,14 @@ const switched = await raw("/api/v2/session", { method: "POST", cookie: other.co
 expect(switched.r.ok, "switch to seller org as viewer");
 const viewerDraft = await raw("/api/v2/ai/drafts", { method: "POST", cookie: switched.cookie, body: { analysisId } });
 expect(viewerDraft.r.status === 403, `viewer must not create draft, got ${viewerDraft.r.status}`);
+const viewerConfirm = await raw(`/api/v2/ai/drafts/${draftId}/confirm`, { method: "POST", cookie: switched.cookie, body: { city: "Jeddah" } });
+expect(viewerConfirm.r.status === 403 || viewerConfirm.r.status === 409, `viewer must not confirm, got ${viewerConfirm.r.status}`);
 
-console.log("Phase 2 API: PASS");
-console.log("AI draft flow: PASS");
-console.log("Feedback: PASS");
-console.log("Pricing foundation: PASS");
-console.log("Matching foundation: PASS");
-console.log("Tenant isolation drafts: PASS");
+console.log("Phase 2A Slice 1 API: PASS");
+console.log("Draft creation: PASS");
+console.log("Tenant isolation: PASS");
+console.log("RBAC: PASS");
+console.log("Seller edit: PASS");
+console.log("Confirm creates listing: PASS");
+console.log("Rejection: PASS");
+console.log("Persistence after refresh: PASS");

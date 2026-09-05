@@ -43,9 +43,9 @@ export const ar = {
   weightHint: "اتركه فارغاً إن لم تعرفه. الصورة لا تثبت الوزن.",
   noDrafts: "لا توجد مسودات بعد. حلّل صورة ثم جهّز مسودة.",
   noAnalyses: "لا توجد تحليلات بعد.",
-  pricingNotice: "لا يوجد مصدر أسعار متصل. لن نعرض سعراً مخترعاً.",
+  publishedListing: "تم النشر. رقم الإعلان:",
+  reviewDraft: "مراجعة مسودة الذكاء الاصطناعي",
   assistant: "مساعد السكراب",
-  matches: "مشترون محتملون (تأسيس)",
 } as const;
 
 export const en = {
@@ -93,9 +93,9 @@ export const en = {
   weightHint: "Leave empty if unknown. An image cannot prove weight.",
   noDrafts: "No drafts yet. Analyze a photo, then prepare a draft.",
   noAnalyses: "No analyses yet.",
-  pricingNotice: "No priced source is connected. A fabricated unit price will not be shown.",
+  publishedListing: "Published. Listing id:",
+  reviewDraft: "AI draft review",
   assistant: "Scrap assistant",
-  matches: "Potential buyers (foundation)",
 } as const;
 
 export type Copy = typeof ar;

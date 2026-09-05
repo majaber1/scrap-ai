@@ -107,7 +107,7 @@ function workspace() {
         </form></section>` : ""}
       ${hash === "analyze" || hash === "overview" ? `<section class="card"><p>${t().analyzeHelp}</p><a class="primary link" href="/#analyze">${t().openAnalyze}</a></section>` : ""}
       ${sell ? `<section class="card">
-        <h2>${t().sell}</h2>
+        <h2>${me?.individualUx ? t().reviewDraft : t().sell}</h2>
         <p>${t().sellHelp}</p>
         <div class="row">
           <a class="primary link" href="/#analyze">${t().openAnalyze}</a>
@@ -116,8 +116,6 @@ function workspace() {
         <p id="sellMsg" class="msg" hidden></p>
         <div id="assistantBox" class="muted"></div>
         <div id="draftBox"></div>
-        <div id="pricingBox" class="muted"></div>
-        <div id="matchBox" class="muted"></div>
       </section>` : ""}
       ${intel ? `<section class="card">
         <h2>${t().intelligence}</h2>
@@ -178,7 +176,7 @@ async function loadSell() {
     box.innerHTML = `<p>${t().noDrafts}</p>`;
     return;
   }
-  const current = drafts[0];
+  const current = drafts.find((row: { status: string }) => row.status === "REVIEW_REQUIRED") || drafts[0];
   const detail = await api.getDraft(current.id);
   const draft = detail.draft;
   const assistant = detail.assistant?.messages || [];
@@ -186,37 +184,23 @@ async function loadSell() {
   if (assistantBox) {
     assistantBox.innerHTML = `<h3>${t().assistant}</h3>` + assistant.map((msg: { ar: string; en: string }) => `<p>${escapeText(lang === "ar" ? msg.ar : msg.en)}</p>`).join("");
   }
-  const pricing = detail.pricing;
-  const pricingBox = document.getElementById("pricingBox");
-  if (pricingBox) {
-    if (!pricing?.range) pricingBox.textContent = t().pricingNotice;
-    else {
-      const pct = pricing.confidence != null ? Math.round(Number(pricing.confidence) * 100) : null;
-      pricingBox.innerHTML = `<p>${escapeText(pricing.range.min)} - ${escapeText(pricing.range.max)} ${escapeText(pricing.currency)}/kg</p><p>${pct == null ? "" : pct + "%"}</p>`;
-    }
-  }
+  const locked = draft.status === "PUBLISHED" || draft.status === "REJECTED";
   box.innerHTML = `
     <form id="draftForm" data-id="${escapeText(draft.id)}">
       <p><strong>${escapeText(lang === "ar" ? (detail.mapping?.labelAr || draft.title_ar) : (detail.mapping?.labelEn || draft.title_en))}</strong></p>
       <p class="muted">${escapeText(draft.status)} · ${escapeText(draft.weight_status)}</p>
-      <label>${t().titleAr}<input name="titleAr" value="${escapeText(draft.title_ar || "")}"></label>
-      <label>${t().titleEn}<input name="titleEn" value="${escapeText(draft.title_en || "")}"></label>
-      <label>${t().city}<input name="city" value="${escapeText(draft.city || "")}" required></label>
-      <label>${t().weightKg}<input name="weightKg" type="number" min="0" step="0.01" value="${escapeText(draft.weight_kg || "")}"></label>
+      ${draft.status === "PUBLISHED" && draft.listing_id ? `<p>${t().publishedListing} ${escapeText(draft.listing_id)}</p>` : ""}
+      <label>${t().titleAr}<input name="titleAr" value="${escapeText(draft.title_ar || "")}" ${locked ? "disabled" : ""}></label>
+      <label>${t().titleEn}<input name="titleEn" value="${escapeText(draft.title_en || "")}" ${locked ? "disabled" : ""}></label>
+      <label>${t().city}<input name="city" value="${escapeText(draft.city || "")}" required ${locked ? "disabled" : ""}></label>
+      <label>${t().weightKg}<input name="weightKg" type="number" min="0" step="0.01" value="${escapeText(draft.weight_kg || "")}" ${locked ? "disabled" : ""}></label>
       <p class="muted">${t().weightHint}</p>
-      <div class="row">
+      ${locked ? "" : `<div class="row">
         <button class="primary" type="submit">${t().saveEdits}</button>
         <button class="primary" type="button" data-act="confirm-draft" data-id="${escapeText(draft.id)}">${t().confirmListing}</button>
         <button class="danger" type="button" data-act="reject-draft" data-id="${escapeText(draft.id)}">${t().rejectDraft}</button>
-      </div>
+      </div>`}
     </form>`;
-  const matchBox = document.getElementById("matchBox");
-  if (matchBox && draft.listing_id) {
-    const matched = await api.matching(draft.listing_id);
-    matchBox.innerHTML = `<h3>${t().matches}</h3>` + (matched.matches?.length
-      ? matched.matches.map((row: { score: number; matching_factors: string[] }) => `<p>${escapeText(row.score)} · ${escapeText((row.matching_factors || []).join(", "))}</p>`).join("")
-      : `<p>${escapeText(matched.notice || "")}</p>`);
-  }
 }
 
 async function loadIntelligence() {
@@ -266,7 +250,8 @@ root.addEventListener("click", async (event) => {
   try {
     if (target.dataset.act === "prepare-draft") {
       await api.createDraft({});
-      await loadSell();
+      if (location.hash !== "#sell") location.hash = "#sell";
+      else await loadSell();
     }
     if (target.dataset.act === "confirm-draft" && target.dataset.id) {
       const form = document.getElementById("draftForm") as HTMLFormElement | null;

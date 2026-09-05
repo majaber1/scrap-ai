@@ -47,9 +47,12 @@ if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligenc
 const phase2Http = await readFile("lib/modules/ai/phase2-http.cjs", "utf8");
 if (!phase2Http.includes("autoPublish: false")) throw new Error("Phase 2 drafts must not auto-publish");
 if (!phase2Http.includes("indicative_value") || !phase2Http.includes("NULL")) throw new Error("Confirmed listings must not invent indicative value from AI");
-const pricing = await readFile("lib/modules/pricing/signals.cjs", "utf8");
-if (!pricing.includes("price_source_not_connected")) throw new Error("Pricing foundation must stay honest when no signals exist");
-if (phase2Http.includes("INSERT INTO market_price_signals")) throw new Error("Phase 2 APIs must not seed fake market prices");
+if (phase2Http.includes("INSERT INTO market_price_signals")) throw new Error("Slice 1 must not seed fake market prices");
+if (phase2Http.includes("INSERT INTO buyer_matching_scores")) throw new Error("Slice 1 must not write buyer matching scores");
+if (!phase2Http.includes("parts[3] === \"confirm\"")) throw new Error("Confirm must be routed as POST /api/v2/ai/drafts/:id/confirm");
+const draftItem = await readFile("api/v2/ai/drafts/[id].js", "utf8");
+const draftAction = await readFile("api/v2/ai/drafts/[id]/[action].js", "utf8");
+if (!draftItem.includes("handleV2") || !draftAction.includes("handleV2")) throw new Error("Draft item and action functions must reuse handleV2");
 
 const v1Apis = ["api/auth.js", "api/listings.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/upload.js", "api/health.js"];
 for (const file of v1Apis) await readFile(file, "utf8");

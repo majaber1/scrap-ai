@@ -1,4 +1,6 @@
 -- Phase 2 AI scrap intelligence. Additive. Does not drop V1/Phase 1 tables.
+-- Slice 1 uses: ai_listing_drafts, material_mapping_events, ai_feedback_events.
+-- market_price_signals and buyer_matching_scores are reserved for later Phase 2 slices.
 
 CREATE TABLE IF NOT EXISTS ai_listing_drafts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
