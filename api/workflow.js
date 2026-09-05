@@ -1,6 +1,7 @@
 const { pool, requireSession, json } = require("../lib/server.cjs");
 const { ensureSchema } = require("../lib/schema.cjs");
 const { normalizeMaterial } = require("../lib/materials.cjs");
+const { loadAuthz, requirePermission } = require("../lib/foundation/authz.cjs");
 const UNITS = new Set(["kg", "ton", "piece"]);
 
 function text(value, max) {
@@ -12,6 +13,7 @@ module.exports = async function handler(req, res) {
   if (!session) return;
   try {
     await ensureSchema(pool);
+    const ctx = await loadAuthz(pool, session);
     if (req.method === "GET") {
       const [listings, offers, pickups] = await Promise.all([
         pool.query(
@@ -45,6 +47,7 @@ module.exports = async function handler(req, res) {
     const body = req.body || {};
 
     if (action === "createListing") {
+      if (!requirePermission(ctx, res, "listing.create")) return;
       const title = text(body.title, 120);
       const material = normalizeMaterial(body.material);
       const city = text(body.city, 80);
@@ -64,6 +67,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "submitOffer") {
+      if (!requirePermission(ctx, res, "offer.create")) return;
       const amount = Number(body.amount);
       if (!Number.isFinite(amount) || amount <= 0) return json(res, 400, { error: "invalid_amount" });
       const existing = await pool.query(
@@ -83,6 +87,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "acceptOffer") {
+      if (!requirePermission(ctx, res, "listing.manage_own")) return;
       const client = await pool.connect();
       try {
         await client.query("BEGIN");

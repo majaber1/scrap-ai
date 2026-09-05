@@ -40,6 +40,7 @@ module.exports = async function(req,res){
       aiProviders: ai.providers || [],
       storage,
       storageProvider:provider,
+      v2Shell: true,
       ...deploy
     });
   } catch(e) {

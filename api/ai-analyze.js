@@ -2,6 +2,7 @@ const { createHash } = require("crypto");
 const { pool, requireSession, json } = require("../lib/server.cjs");
 const { ensureOperations } = require("../lib/operations.cjs");
 const { analyzeScrapImage, aiStatus } = require("../lib/ai.cjs");
+const { loadAuthz, requirePermission } = require("../lib/foundation/authz.cjs");
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxBytes = 2800000;
@@ -41,7 +42,9 @@ module.exports = async function handler(req, res) {
   const ai = await Promise.resolve(aiStatus());
   try {
     await ensureOperations(pool);
+    const ctx = await loadAuthz(pool, session);
     if (req.method === "GET") {
+      if (!requirePermission(ctx, res, "analysis.read")) return;
       const rows = await pool.query(
         `SELECT id, created_at, provider, model, fallback_used, estimate_kind, latency_ms, result
          FROM ai_analyses
@@ -64,6 +67,7 @@ module.exports = async function handler(req, res) {
       });
     }
     if (req.method !== "POST") return json(res, 405, { error: "method_not_allowed" });
+    if (!requirePermission(ctx, res, "analysis.create")) return;
     if (!ai.configured) return json(res, 503, { error: "ai_not_configured", required: ai.required });
     const recent = await pool.query(
       "SELECT count(*)::int count FROM ai_analyses WHERE organization_id=$1 AND created_at>now()-interval '1 hour'",
