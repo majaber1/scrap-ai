@@ -47,16 +47,15 @@ if (!schema.includes("pg_advisory_lock") || !schema.includes("003_ai_intelligenc
 const v1Apis = ["api/auth.js", "api/listings.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/upload.js", "api/health.js"];
 for (const file of v1Apis) await readFile(file, "utf8");
 
-const sitesItem = await readFile("api/v2/sites/[id].js", "utf8");
-if (!sitesItem.includes("organization_id=$2") && !sitesItem.includes("organization_id=$1")) {
+const v2Http = await readFile("lib/foundation/v2-http.cjs", "utf8");
+if (!v2Http.includes("organization_id=$2") && !v2Http.includes("organization_id=$1")) {
   throw new Error("Site item access must be tenant-scoped");
 }
-const sitesApi = await readFile("api/v2/sites.js", "utf8");
-if (!sitesApi.includes("writeOutbox") || !sitesApi.includes("BEGIN")) {
+if (!v2Http.includes("writeOutbox") || !v2Http.includes("BEGIN")) {
   throw new Error("Site creation must write outbox in a transaction");
 }
 
-const apiFiles = ["api/auth.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/v2/me.js", "api/v2/organization.js", "api/v2/sites.js", "api/v2/members.js"];
+const apiFiles = ["api/auth.js", "api/workflow.js", "api/platform.js", "api/ai-analyze.js", "api/v2/[...path].js", "lib/foundation/v2-http.cjs"];
 for (const file of apiFiles) {
   const text = await readFile(file, "utf8");
   if (/UPDATE\s+audit_events/i.test(text) || /DELETE\s+FROM\s+audit_events/i.test(text)) {

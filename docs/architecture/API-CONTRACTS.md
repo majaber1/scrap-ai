@@ -4,6 +4,8 @@ Existing: `GET/POST /api/auth`, `GET /api/listings`, `GET/POST /api/workflow`, `
 
 Phase 1 additive (session required unless noted):
 
+V2 HTTP surface is one Hobby-safe catch-all (`api/v2/[...path].js` → `lib/foundation/v2-http.cjs`). Public contracts are unchanged:
+
 - `GET /api/v2/me`
 - `GET|PATCH /api/v2/organization` (PATCH body `{ name?, customerSegment }`)
 - `GET|POST /api/v2/sites` ; `GET|PATCH /api/v2/sites/:id`
